@@ -1,0 +1,69 @@
+:host,
+.viewport,
+.viewport__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  background: #aebfa3;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    background:
+      linear-gradient(180deg, rgba(15, 28, 24, 0.05), transparent 22%),
+      linear-gradient(0deg, rgba(13, 22, 18, 0.16), transparent 20%);
+  }
+}
+
+.viewport__canvas {
+  touch-action: none;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px rgba(246, 239, 199, 0.9);
+  }
+}
+
+.viewport__message {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  max-width: min(28rem, calc(100% - 3rem));
+  padding: 1.4rem 1.6rem;
+  place-items: center;
+  color: #f7f3df;
+  text-align: center;
+  background: rgba(21, 35, 29, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 3rem rgba(8, 15, 12, 0.25);
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(1rem);
+
+  p {
+    margin: 0.8rem 0 0;
+    line-height: 1.5;
+  }
+}
+
+.viewport__message-mark {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  place-items: center;
+  color: #273c2a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: #d7dfa9;
+  border-radius: 50%;
+}

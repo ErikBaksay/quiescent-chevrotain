@@ -1,0 +1,17 @@
+<section #viewport class="viewport" aria-label="Quiescent Chevrotain 3D world">
+  <canvas
+    #canvas
+    class="viewport__canvas"
+    tabindex="0"
+    aria-label="Interactive 3D world. Place and select cubes, drag to orbit, right-drag to pan, and scroll to zoom."
+    (pointerdown)="focusCanvas()"
+    (contextmenu)="$event.preventDefault()"
+  ></canvas>
+
+  @if (errorMessage()) {
+    <div class="viewport__message" role="status">
+      <span class="viewport__message-mark" aria-hidden="true">QC</span>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+</section>

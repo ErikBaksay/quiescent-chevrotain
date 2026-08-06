@@ -1,0 +1,91 @@
+<nav class="toolbar" aria-label="World editor tools">
+  <span class="toolbar__status" aria-live="polite">
+    {{ state().hasSelection ? 'Object selected' : 'No object selected' }}
+  </span>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Select objects"
+    aria-label="Select objects"
+    [class.tool-button--active]="state().tool === 'select'"
+    [attr.aria-pressed]="state().tool === 'select'"
+    (click)="chooseTool('select')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m5 3 12 9-6 1.5L8.5 20 5 3Z" />
+    </svg>
+    <span class="tool-button__label">Select</span>
+  </button>
+
+  <span class="toolbar__divider" aria-hidden="true"></span>
+
+  <button
+    class="tool-button tool-button--place"
+    type="button"
+    title="Place one prototype cube"
+    aria-label="Place one prototype cube"
+    [class.tool-button--active]="state().tool === 'place'"
+    [attr.aria-pressed]="state().tool === 'place'"
+    (click)="chooseTool('place')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+      <path d="m4 7.5 8 4.5 8-4.5M12 12v9" />
+    </svg>
+    <span class="tool-button__label">Place Cube</span>
+  </button>
+
+  <span class="toolbar__divider" aria-hidden="true"></span>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Move selected object (G)"
+    aria-label="Move selected object"
+    [disabled]="!state().hasSelection"
+    [class.tool-button--active]="state().tool === 'move'"
+    [attr.aria-pressed]="state().tool === 'move'"
+    (click)="chooseTool('move')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 3v18M3 12h18m-9-9-3 3m3-3 3 3m6 6-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"
+      />
+    </svg>
+    <span class="tool-button__label">Move</span>
+    <kbd>G</kbd>
+  </button>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Rotate selected object (R)"
+    aria-label="Rotate selected object"
+    [disabled]="!state().hasSelection"
+    [class.tool-button--active]="state().tool === 'rotate'"
+    [attr.aria-pressed]="state().tool === 'rotate'"
+    (click)="chooseTool('rotate')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 8V4m0 0h-4m4 0-3.2 3.2a7 7 0 1 0 1.1 8.4" />
+    </svg>
+    <span class="tool-button__label">Rotate</span>
+    <kbd>R</kbd>
+  </button>
+
+  <button
+    class="tool-button tool-button--danger"
+    type="button"
+    title="Delete selected object"
+    aria-label="Delete selected object"
+    [disabled]="!state().hasSelection"
+    (click)="deleteSelected.emit()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h14M9 7V4h6v3m2 0-1 13H8L7 7m3 4v5m4-5v5" />
+    </svg>
+    <span class="tool-button__label">Delete</span>
+    <kbd>Del</kbd>
+  </button>
+</nav>

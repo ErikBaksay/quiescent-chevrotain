@@ -1,0 +1,51 @@
+<main class="editor-shell">
+  <app-game-viewport
+    #world
+    class="world"
+    (editorStateChange)="editorState.set($event)"
+  ></app-game-viewport>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" role="img">
+          <path d="M14 11 9 5m5 6-1-7m13 7 5-6m-5 6 1-7" />
+          <path d="M13 10c-3 5-2 14 2 20l5 5 5-5c4-6 5-15 2-20l-7 4-7-4Z" />
+          <path d="m16 24 4 2 4-2" />
+        </svg>
+      </span>
+      <span>
+        <strong>Quiescent Chevrotain</strong>
+        <small>Creative world</small>
+      </span>
+    </div>
+
+    <div class="environment" aria-label="Current environment: sunny">
+      <span class="environment__sun" aria-hidden="true"></span>
+      <span>Sunny</span>
+    </div>
+  </header>
+
+  <aside class="stage-card" aria-label="Development status">
+    <span class="stage-card__eyebrow">Placement proof</span>
+    <strong>Stage 2</strong>
+    <span class="stage-card__meta">
+      {{ editorState().objectCount }}
+      {{ editorState().objectCount === 1 ? 'object' : 'objects' }} · {{ worldWidthKilometres }} ×
+      {{ worldDepthKilometres }} km
+    </span>
+  </aside>
+
+  <app-editor-toolbar
+    [state]="editorState()"
+    (toolChange)="world.setEditorTool($event)"
+    (deleteSelected)="world.deleteSelected()"
+  ></app-editor-toolbar>
+
+  <aside class="camera-guide" aria-label="Camera controls">
+    <span class="camera-guide__label">Camera</span>
+    <span><kbd>Drag</kbd> Orbit</span>
+    <span><kbd>Right drag</kbd> Pan</span>
+    <span><kbd>Scroll</kbd> Zoom</span>
+  </aside>
+</main>
