@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { AssetBrowser } from './asset-browser/asset-browser';
 import { EditorToolbar } from './editor-toolbar/editor-toolbar';
 import { EditorState, INITIAL_EDITOR_STATE } from './game/editor/editor.types';
 import { GameViewport } from './game/viewport/game-viewport';
@@ -6,7 +7,7 @@ import { WORLD_CONFIG } from './game/world/world.config';
 
 @Component({
   selector: 'app-root',
-  imports: [EditorToolbar, GameViewport],
+  imports: [AssetBrowser, EditorToolbar, GameViewport],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

@@ -20,9 +20,9 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     expect(compiled.querySelector('.brand strong')?.textContent).toContain('Quiescent Chevrotain');
-    expect(compiled.querySelector('.stage-card')?.textContent).toContain('Stage 2');
+    expect(compiled.querySelector('.stage-card')?.textContent).toContain('Stage 3');
     expect(compiled.querySelector('[aria-label="World editor tools"]')).toBeTruthy();
-    expect(compiled.querySelector('[aria-label="Place one prototype cube"]')).toBeTruthy();
+    expect(compiled.querySelector('[aria-label="Asset catalogue"]')).toBeTruthy();
     expect(compiled.querySelector('canvas')?.getAttribute('aria-label')).toContain('3D world');
   });
 });

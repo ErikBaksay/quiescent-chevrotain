@@ -65,17 +65,17 @@ Camera controls:
 - Middle-button drag or wheel: zoom
 - Touch: one-finger orbit, two-finger pan/zoom
 
-Stage 2 editing shortcuts:
+Stage 3 editing shortcuts:
 
 - `G`: move
 - `R`: rotate
+- `S`: scale
+- `Ctrl/Cmd + D`: duplicate with a 2 m X/Z offset
 - `Delete`: delete
 - `Escape`: leave the active tool, then deselect
 
 Planned editing shortcuts:
 
-- `S`: scale
-- `Ctrl/Cmd + D`: duplicate
 - `Ctrl/Cmd + Z`: undo
 - `Ctrl/Cmd + Y` or `Shift + Ctrl/Cmd + Z`: redo
 
@@ -106,7 +106,7 @@ Asset metadata will eventually identify named model materials that the player ma
 
 Placement is deliberately permissive. Ground, grid, and rotation snapping are optional helpers, not collision rules. Free rotation, movement, scale, duplicate, and delete are fundamental. Numerical position, rotation, and scale fields can later complement direct manipulation.
 
-The Stage 2 interaction proof uses a one-shot prototype cube workflow before real assets. A terrain marker identifies the placement point; the placed cube is automatically selected and can be freely moved or rotated with TransformControls. Selection is single-object and placement remains permissive.
+Stage 3 replaces the prototype path with catalogue-driven GLBs. Selecting a card loads a translucent ghost and enters continuous placement; new instances remain unselected. Selection is single-object, all transforms remain permissive, and optional 1 m translation/placement and 15° rotation snapping default off.
 
 ## Terrain, surfaces, roads, and water
 
@@ -179,7 +179,7 @@ The finite 2 km map may be internally partitioned later even though it presents 
 
 Completion means a stable, attractive, interactive empty world. No editor interactions are included.
 
-### Stage 2 — Placement proof (current, complete)
+### Stage 2 — Placement proof (complete)
 
 - Raycast onto terrain and show a placement point
 - Place and select a primitive cube
@@ -187,11 +187,13 @@ Completion means a stable, attractive, interactive empty world. No editor intera
 
 Completion means the primitive place/select/transform/delete loop is stable without introducing the asset catalogue or persistence concerns.
 
-### Stage 3 — Real asset system (next)
+### Stage 3 — Southern Heritage Collection and real asset system (current)
 
 - GLB loading, generic definitions, and catalogue
-- Placement ghost and a small sample library
+- Continuous placement ghost and the eight-piece Southern American Heritage Town Collection
 - Duplicate, scale, and optional snapping
+
+The collection spans 1820–1910 with maintained historical patina. The Neoclassical Courthouse is the first asset and is at final review; each asset requires separate concept and final approval before work begins on the next.
 
 ### Stage 4 — Editor robustness
 

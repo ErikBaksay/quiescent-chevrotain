@@ -2,7 +2,7 @@
 
 Quiescent Chevrotain is a relaxing, browser-first 3D world builder focused on free-form building, decorating, landscaping, and enjoying the result.
 
-The project has completed **Stage 2: Placement Proof**. It provides a responsive Angular application shell with a Three.js-rendered grassy world, warm outdoor lighting, camera navigation, and a primitive cube placement/editing loop.
+The project is implementing **Stage 3: Southern Heritage Collection and Real Asset System**. It now has a data-driven GLB catalogue, continuous placement ghosts, cached instances, full transforms, duplication, and optional snapping. The Neoclassical Courthouse is the first collection asset and remains at its final-review gate.
 
 ## Stack
 
@@ -34,11 +34,14 @@ Open `http://localhost:4200`.
 - Primary-button drag: orbit camera
 - Secondary-button drag: pan camera
 - Wheel or middle-button drag: zoom camera
-- **Place Cube**, then click the terrain: place and select one prototype cube
-- `G`: move the selected cube
-- `R`: rotate the selected cube
-- `Delete` or `Backspace`: delete the selected cube
-- `Escape`: leave the active tool, then deselect
+- Select an asset card, then click the terrain: place instances continuously
+- `G`: move the selected asset
+- `R`: rotate the selected asset
+- `S`: scale the selected asset
+- `Ctrl/Cmd + D`: duplicate the selected asset with a 2 m X/Z offset
+- `Delete` or `Backspace`: delete the selected asset
+- `Escape`: cancel placement or the active transform tool, then deselect
+- Toolbar toggles: optional 1 m placement/movement grid and 15° rotation snapping
 
 ## Commands
 
@@ -47,6 +50,7 @@ npm start        # Run the development server
 npm run build    # Create a production build in dist/
 npm run build:pages # Build with the GitHub Pages repository base path
 npm test         # Run unit tests
+npm run assets:validate # Validate the catalogue, manifests, GLB headers, and thumbnails
 npm run format   # Format source and documentation
 npm run format:check
 ```
@@ -55,13 +59,18 @@ npm run format:check
 
 ```text
 src/app/
+  assets/         # Catalogue contracts and base-path-safe manifest loading
+  asset-browser/  # Angular catalogue browser
   game/
+    assets/       # Cached GLB loading, cloning, and disposal
     editor/      # Placement, selection, transform, and input systems
     engine/      # Three.js lifecycle, camera, and environment systems
     viewport/    # Angular-to-Three.js canvas boundary
     world/       # World configuration and terrain
   app.*          # Angular application shell
-public/          # Static files and, later, the asset catalogue
+public/assets/   # Static catalogue and self-contained runtime asset folders
+tools/blender/   # Reproducible Blender asset generators
+ASSETS.md        # Asset authoring and export contract
 PROJECT.md       # Long-term product and architecture source of truth
 ```
 

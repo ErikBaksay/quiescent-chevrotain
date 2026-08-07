@@ -1,6 +1,12 @@
 <nav class="toolbar" aria-label="World editor tools">
   <span class="toolbar__status" aria-live="polite">
-    {{ state().hasSelection ? 'Object selected' : 'No object selected' }}
+    @if (state().placementStatus === 'loading') {
+      Loading asset
+    } @else if (state().placementStatus === 'error') {
+      {{ state().placementError }}
+    } @else {
+      {{ state().hasSelection ? 'Object selected' : 'No object selected' }}
+    }
   </span>
 
   <button
@@ -16,24 +22,6 @@
       <path d="m5 3 12 9-6 1.5L8.5 20 5 3Z" />
     </svg>
     <span class="tool-button__label">Select</span>
-  </button>
-
-  <span class="toolbar__divider" aria-hidden="true"></span>
-
-  <button
-    class="tool-button tool-button--place"
-    type="button"
-    title="Place one prototype cube"
-    aria-label="Place one prototype cube"
-    [class.tool-button--active]="state().tool === 'place'"
-    [attr.aria-pressed]="state().tool === 'place'"
-    (click)="chooseTool('place')"
-  >
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
-      <path d="m4 7.5 8 4.5 8-4.5M12 12v9" />
-    </svg>
-    <span class="tool-button__label">Place Cube</span>
   </button>
 
   <span class="toolbar__divider" aria-hidden="true"></span>
@@ -55,6 +43,69 @@
     </svg>
     <span class="tool-button__label">Move</span>
     <kbd>G</kbd>
+  </button>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Scale selected object (S)"
+    aria-label="Scale selected object"
+    [disabled]="!state().hasSelection"
+    [class.tool-button--active]="state().tool === 'scale'"
+    [attr.aria-pressed]="state().tool === 'scale'"
+    (click)="chooseTool('scale')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 19 19 5m-8 0h8v8M5 11v8h8" />
+    </svg>
+    <span class="tool-button__label">Scale</span>
+    <kbd>S</kbd>
+  </button>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Duplicate selected object (Ctrl or Command + D)"
+    aria-label="Duplicate selected object"
+    [disabled]="!state().hasSelection"
+    (click)="duplicateSelected.emit()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="7" y="7" width="12" height="12" rx="1" />
+      <path d="M5 15H4V4h11v1" />
+    </svg>
+    <span class="tool-button__label">Duplicate</span>
+    <kbd>⌘D</kbd>
+  </button>
+
+  <span class="toolbar__divider" aria-hidden="true"></span>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Toggle 1 metre placement and movement snapping"
+    aria-label="Toggle 1 metre grid snapping"
+    [class.tool-button--active]="state().gridSnapEnabled"
+    [attr.aria-pressed]="state().gridSnapEnabled"
+    (click)="gridSnapChange.emit(!state().gridSnapEnabled)"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 12h16M12 4v16" /></svg>
+    <span class="tool-button__label">Grid</span>
+  </button>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Toggle 15 degree rotation snapping"
+    aria-label="Toggle 15 degree rotation snapping"
+    [class.tool-button--active]="state().rotationSnapEnabled"
+    [attr.aria-pressed]="state().rotationSnapEnabled"
+    (click)="rotationSnapChange.emit(!state().rotationSnapEnabled)"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 8V4h-4M19 4l-3.2 3.2a7 7 0 1 0 1.1 8.4" />
+    </svg>
+    <span class="tool-button__label">15°</span>
   </button>
 
   <button

@@ -9,6 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false",
     "test:watch": "ng test",
+    "assets:validate": "node tools/validate-assets.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -1,139 +1,152 @@
 import {
-  BoxGeometry,
   DoubleSide,
-  Group,
-  MathUtils,
   Mesh,
   MeshBasicMaterial,
-  MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
   Raycaster,
-  RingGeometry,
   Scene,
   Vector2,
   Vector3,
 } from 'three';
+import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { AssetManager } from '../assets/asset-manager';
+import { PlacementStatus } from './editor.types';
 
-export const PROTOTYPE_CUBE_SIZE = 8;
+export interface PlacementState {
+  readonly activeAssetId: string | null;
+  readonly status: PlacementStatus;
+  readonly error: string | null;
+}
 
-/** Owns terrain hit testing, the placement marker, and prototype cube resources. */
+/** Owns terrain-only placement, asynchronous ghost loading, and continuous instances. */
 export class PlacementSystem {
   private readonly raycaster = new Raycaster();
   private readonly placementPoint = new Vector3();
-  private readonly markerGeometry = new RingGeometry(1.15, 1.6, 48);
-  private readonly markerMaterial = new MeshBasicMaterial({
-    color: 0xffcf70,
-    depthWrite: false,
-    opacity: 0.92,
+  private readonly ghostMaterial = new MeshBasicMaterial({
+    color: 0xffd37a,
+    opacity: 0.42,
     side: DoubleSide,
-    toneMapped: false,
     transparent: true,
+    depthWrite: false,
   });
-  private readonly marker = new Mesh(this.markerGeometry, this.markerMaterial);
-  private readonly cubeGeometry = new BoxGeometry(
-    PROTOTYPE_CUBE_SIZE,
-    PROTOTYPE_CUBE_SIZE,
-    PROTOTYPE_CUBE_SIZE,
-  );
-  private readonly cubeMaterial = new MeshStandardMaterial({
-    color: 0xc9784d,
-    metalness: 0,
-    roughness: 0.72,
-  });
-
-  private active = false;
+  private activeAsset: ResolvedAssetDefinition | undefined;
+  private ghost: Object3D | undefined;
   private hasPlacementPoint = false;
-  private cubeSequence = 0;
+  private requestSequence = 0;
+  private placementState: PlacementState = { activeAssetId: null, status: 'idle', error: null };
+  private gridSnapEnabled = false;
 
   constructor(
     private readonly scene: Scene,
     private readonly terrain: Object3D,
-  ) {
-    this.marker.name = 'Placement point';
-    this.marker.rotation.x = -Math.PI / 2;
-    this.marker.renderOrder = 8;
-    this.marker.visible = false;
-    this.scene.add(this.marker);
+    private readonly assets: AssetManager,
+    private readonly onStateChange: () => void,
+  ) {}
+
+  get state(): PlacementState {
+    return this.placementState;
   }
 
-  setActive(active: boolean): void {
-    this.active = active;
-    if (!active) {
-      this.clearPlacementPoint();
+  async begin(asset: ResolvedAssetDefinition): Promise<void> {
+    const request = ++this.requestSequence;
+    this.removeGhost();
+    this.activeAsset = asset;
+    this.setState(asset.id, 'loading', null);
+    try {
+      const ghost = await this.assets.createInstance(asset);
+      if (request !== this.requestSequence || this.activeAsset?.id !== asset.id) return;
+      ghost.name = `${asset.name} Placement Ghost`;
+      ghost.visible = false;
+      ghost.traverse((child) => {
+        if (child instanceof Mesh) child.material = this.ghostMaterial;
+      });
+      this.ghost = ghost;
+      this.scene.add(ghost);
+      this.setState(asset.id, 'ready', null);
+    } catch (error) {
+      if (request !== this.requestSequence) return;
+      this.activeAsset = undefined;
+      this.setState(
+        null,
+        'error',
+        error instanceof Error ? error.message : `Unable to load ${asset.name}.`,
+      );
     }
+  }
+
+  cancel(): void {
+    ++this.requestSequence;
+    this.activeAsset = undefined;
+    this.clearPlacementPoint();
+    this.removeGhost();
+    this.setState(null, 'idle', null);
+  }
+
+  setGridSnapEnabled(enabled: boolean): void {
+    this.gridSnapEnabled = enabled;
+    if (this.hasPlacementPoint) this.positionGhost();
   }
 
   updatePointer(pointer: Vector2, camera: PerspectiveCamera): boolean {
-    if (!this.active) {
-      return false;
-    }
-
+    if (!this.ghost || this.placementState.status !== 'ready') return false;
     this.terrain.updateWorldMatrix(true, false);
     camera.updateWorldMatrix(true, false);
     this.raycaster.setFromCamera(pointer, camera);
     const intersection = this.raycaster.intersectObject(this.terrain, false)[0];
-
     if (!intersection) {
       this.clearPlacementPoint();
       return false;
     }
-
     this.placementPoint.copy(intersection.point);
-    this.marker.position.copy(intersection.point);
-    this.marker.position.y += 0.08;
-    this.marker.visible = true;
     this.hasPlacementPoint = true;
-    this.updateMarkerScale(camera);
+    this.positionGhost();
+    this.ghost.visible = true;
     return true;
   }
 
-  update(camera: PerspectiveCamera): void {
-    if (this.marker.visible) {
-      this.updateMarkerScale(camera);
-    }
+  async createAtCurrentPoint(): Promise<Object3D | undefined> {
+    if (!this.activeAsset || !this.hasPlacementPoint || this.placementState.status !== 'ready')
+      return undefined;
+    const instance = await this.assets.createInstance(this.activeAsset);
+    instance.position.copy(this.snappedPoint());
+    return instance;
   }
 
   clearPlacementPoint(): void {
-    this.marker.visible = false;
     this.hasPlacementPoint = false;
-  }
-
-  createPrototypeCubeAt(point: Vector3): Group {
-    this.cubeSequence += 1;
-
-    const root = new Group();
-    root.name = `Prototype Cube ${this.cubeSequence}`;
-    root.position.set(point.x, point.y + PROTOTYPE_CUBE_SIZE / 2, point.z);
-
-    const cube = new Mesh(this.cubeGeometry, this.cubeMaterial);
-    cube.name = 'Prototype Cube Mesh';
-    cube.castShadow = true;
-    cube.receiveShadow = true;
-    root.add(cube);
-
-    return root;
-  }
-
-  createPrototypeCubeAtCurrentPoint(): Group | undefined {
-    if (!this.hasPlacementPoint) {
-      return undefined;
-    }
-
-    return this.createPrototypeCubeAt(this.placementPoint);
+    if (this.ghost) this.ghost.visible = false;
   }
 
   dispose(): void {
-    this.scene.remove(this.marker);
-    this.markerGeometry.dispose();
-    this.markerMaterial.dispose();
-    this.cubeGeometry.dispose();
-    this.cubeMaterial.dispose();
+    this.cancel();
+    this.ghostMaterial.dispose();
   }
 
-  private updateMarkerScale(camera: PerspectiveCamera): void {
-    const distance = camera.position.distanceTo(this.placementPoint);
-    const scale = MathUtils.clamp(distance / 180, 0.7, 5);
-    this.marker.scale.setScalar(scale);
+  private setState(
+    activeAssetId: string | null,
+    status: PlacementStatus,
+    error: string | null,
+  ): void {
+    this.placementState = { activeAssetId, status, error };
+    this.onStateChange();
+  }
+
+  private snappedPoint(): Vector3 {
+    const point = this.placementPoint.clone();
+    if (this.gridSnapEnabled) {
+      point.x = Math.round(point.x);
+      point.z = Math.round(point.z);
+    }
+    return point;
+  }
+
+  private positionGhost(): void {
+    this.ghost?.position.copy(this.snappedPoint());
+  }
+
+  private removeGhost(): void {
+    this.ghost?.removeFromParent();
+    this.ghost = undefined;
   }
 }

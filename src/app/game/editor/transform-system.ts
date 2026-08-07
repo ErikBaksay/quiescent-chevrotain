@@ -33,19 +33,30 @@ export class TransformSystem {
   setTool(tool: EditorTool, object: Object3D | undefined): void {
     this.controls.detach();
 
-    if (!object || (tool !== 'move' && tool !== 'rotate')) {
+    if (!object || (tool !== 'move' && tool !== 'rotate' && tool !== 'scale')) {
       return;
     }
 
     if (tool === 'move') {
       this.controls.setMode('translate');
       this.controls.setSpace('world');
-    } else {
+    } else if (tool === 'rotate') {
       this.controls.setMode('rotate');
+      this.controls.setSpace('local');
+    } else {
+      this.controls.setMode('scale');
       this.controls.setSpace('local');
     }
 
     this.controls.attach(object);
+  }
+
+  setGridSnapEnabled(enabled: boolean): void {
+    this.controls.setTranslationSnap(enabled ? 1 : null);
+  }
+
+  setRotationSnapEnabled(enabled: boolean): void {
+    this.controls.setRotationSnap(enabled ? Math.PI / 12 : null);
   }
 
   detach(): void {

@@ -1,0 +1,40 @@
+<aside class="asset-browser" aria-label="Asset catalogue">
+  <header>
+    <span>Heritage collection</span>
+    <strong>Assets</strong>
+  </header>
+
+  <div class="filters" aria-label="Asset categories">
+    <button type="button" [class.active]="category() === 'all'" (click)="category.set('all')">
+      All
+    </button>
+    @for (item of categories; track item) {
+      <button type="button" [class.active]="category() === item" (click)="category.set(item)">
+        {{ categoryLabel(item) }}
+      </button>
+    }
+  </div>
+
+  @if (status() === 'loading') {
+    <p class="message" aria-live="polite">Loading collection…</p>
+  } @else if (status() === 'error') {
+    <p class="message message--error" role="alert">{{ error() }}</p>
+  } @else if (visibleAssets().length === 0) {
+    <p class="message">No assets in this category yet.</p>
+  } @else {
+    <div class="asset-grid">
+      @for (asset of visibleAssets(); track asset.id) {
+        <button
+          class="asset-card"
+          type="button"
+          [class.active]="activeAssetId() === asset.id"
+          [attr.aria-pressed]="activeAssetId() === asset.id"
+          (click)="select(asset)"
+        >
+          <img [src]="asset.thumbnailUrl" [alt]="asset.name" />
+          <span>{{ asset.name }}</span>
+        </button>
+      }
+    </div>
+  }
+</aside>

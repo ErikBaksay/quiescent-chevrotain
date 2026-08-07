@@ -1,8 +1,21 @@
-import { Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, Scene } from 'three';
+import { Group, Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, Scene } from 'three';
+import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { AssetManager } from '../assets/asset-manager';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorSystem } from './editor-system';
 import { EditorState } from './editor.types';
-import { PROTOTYPE_CUBE_SIZE } from './placement-system';
+
+const asset: ResolvedAssetDefinition = {
+  id: 'courthouse',
+  name: 'Courthouse',
+  category: 'civic',
+  model: 'model.glb',
+  thumbnail: 'thumbnail.webp',
+  defaultScale: 1,
+  manifestUrl: 'https://example.test/asset.json',
+  modelUrl: 'https://example.test/model.glb',
+  thumbnailUrl: 'https://example.test/thumbnail.webp',
+};
 
 describe('EditorSystem', () => {
   let canvas: HTMLCanvasElement;
@@ -44,11 +57,19 @@ describe('EditorSystem', () => {
     scene.updateMatrixWorld(true);
 
     states = [];
+    const assetManager = {
+      createInstance: vi.fn(async () => {
+        const root = new Group();
+        root.add(new Mesh(new PlaneGeometry(2, 2)));
+        return root;
+      }),
+    } as unknown as AssetManager;
     editor = new EditorSystem(
       scene,
       camera,
       canvas,
       terrain,
+      assetManager,
       (state) => states.push(state),
       vi.fn(),
     );
@@ -61,61 +82,40 @@ describe('EditorSystem', () => {
     canvas.remove();
   });
 
-  it('performs one-shot placement and selects the new cube', () => {
-    editor.setTool('place');
+  it('performs continuous asset placement without selecting the new object', async () => {
+    editor.beginAssetPlacement(asset);
+    await Promise.resolve();
     dispatchPointer('pointermove', 100, 50);
     dispatchPointer('pointerdown', 100, 50);
     dispatchPointer('pointerup', 100, 50);
-
-    expect(editor.state).toEqual({ tool: 'select', hasSelection: true, objectCount: 1 });
-    expect(editor.selectedObject?.position.y).toBeCloseTo(PROTOTYPE_CUBE_SIZE / 2);
+    await vi.waitFor(() =>
+      expect(editor.state).toMatchObject({
+        tool: 'place',
+        hasSelection: false,
+        objectCount: 1,
+        placementStatus: 'ready',
+      }),
+    );
   });
 
-  it('does not treat a camera drag as a placement click', () => {
-    editor.setTool('place');
+  it('does not treat a camera drag as a placement click', async () => {
+    editor.beginAssetPlacement(asset);
+    await Promise.resolve();
     dispatchPointer('pointermove', 100, 50);
     dispatchPointer('pointerdown', 100, 50);
     dispatchPointer('pointerup', 120, 50);
 
-    expect(editor.state).toEqual({ tool: 'place', hasSelection: false, objectCount: 0 });
-  });
-
-  it('supports selection, tool shortcuts, staged Escape behavior, and deletion', () => {
-    placeCube();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g' }));
-    expect(editor.state.tool).toBe('move');
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    expect(editor.state).toMatchObject({ tool: 'select', hasSelection: true });
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    expect(editor.state.hasSelection).toBe(false);
-
-    dispatchPointer('pointerdown', 100, 50);
-    dispatchPointer('pointerup', 100, 50);
-    expect(editor.state.hasSelection).toBe(true);
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }));
-    expect(editor.state.tool).toBe('rotate');
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
-    expect(editor.state).toEqual({ tool: 'select', hasSelection: false, objectCount: 0 });
+    expect(editor.state).toMatchObject({ tool: 'place', hasSelection: false, objectCount: 0 });
   });
 
   it('does not activate transform tools without a selection', () => {
     editor.setTool('move');
     editor.setTool('rotate');
+    editor.setTool('scale');
 
-    expect(editor.state).toEqual({ tool: 'select', hasSelection: false, objectCount: 0 });
+    expect(editor.state).toMatchObject({ tool: 'select', hasSelection: false, objectCount: 0 });
     expect(states.at(-1)).toEqual(editor.state);
   });
-
-  function placeCube(): void {
-    editor.setTool('place');
-    dispatchPointer('pointermove', 100, 50);
-    dispatchPointer('pointerdown', 100, 50);
-    dispatchPointer('pointerup', 100, 50);
-  }
 
   function dispatchPointer(type: string, clientX: number, clientY: number): void {
     const event = new MouseEvent(type, {

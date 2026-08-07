@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { GameEngine } from '../engine/game-engine';
 import { EditorState, EditorTool } from '../editor/editor.types';
+import { ResolvedAssetDefinition } from '../../assets/asset.types';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -87,6 +88,19 @@ export class GameViewport implements AfterViewInit, OnDestroy {
 
   setEditorTool(tool: EditorTool): void {
     this.engine?.setEditorTool(tool);
+  }
+
+  beginAssetPlacement(asset: ResolvedAssetDefinition): void {
+    this.engine?.beginAssetPlacement(asset);
+  }
+  duplicateSelected(): void {
+    this.engine?.duplicateSelected();
+  }
+  setGridSnapEnabled(enabled: boolean): void {
+    this.engine?.setGridSnapEnabled(enabled);
+  }
+  setRotationSnapEnabled(enabled: boolean): void {
+    this.engine?.setRotationSnapEnabled(enabled);
   }
 
   deleteSelected(): void {

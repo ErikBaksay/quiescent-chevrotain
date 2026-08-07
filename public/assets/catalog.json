@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "manifests": ["models/neoclassical-courthouse/asset.json"]
+}

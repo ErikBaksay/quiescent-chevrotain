@@ -27,8 +27,8 @@
   </header>
 
   <aside class="stage-card" aria-label="Development status">
-    <span class="stage-card__eyebrow">Placement proof</span>
-    <strong>Stage 2</strong>
+    <span class="stage-card__eyebrow">Southern Heritage Collection</span>
+    <strong>Stage 3</strong>
     <span class="stage-card__meta">
       {{ editorState().objectCount }}
       {{ editorState().objectCount === 1 ? 'object' : 'objects' }} · {{ worldWidthKilometres }} ×
@@ -36,10 +36,18 @@
     </span>
   </aside>
 
+  <app-asset-browser
+    #catalogue
+    (assetSelected)="world.beginAssetPlacement($event)"
+  ></app-asset-browser>
+
   <app-editor-toolbar
     [state]="editorState()"
     (toolChange)="world.setEditorTool($event)"
     (deleteSelected)="world.deleteSelected()"
+    (duplicateSelected)="world.duplicateSelected()"
+    (gridSnapChange)="world.setGridSnapEnabled($event)"
+    (rotationSnapChange)="world.setRotationSnapEnabled($event)"
   ></app-editor-toolbar>
 
   <aside class="camera-guide" aria-label="Camera controls">

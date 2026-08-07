@@ -1,4 +1,6 @@
 import { AgXToneMapping, PCFSoftShadowMap, Scene, SRGBColorSpace, WebGLRenderer } from 'three';
+import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { AssetManager } from '../assets/asset-manager';
 import { EditorSystem } from '../editor/editor-system';
 import { EditorState, EditorTool } from '../editor/editor.types';
 import { WORLD_CONFIG } from '../world/world.config';
@@ -21,6 +23,7 @@ export class GameEngine {
   private readonly environmentSystem: EnvironmentSystem;
   private readonly worldSystem: WorldSystem;
   private readonly editorSystem: EditorSystem;
+  private readonly assetManager = new AssetManager();
 
   private animationFrameId: number | undefined;
   private width = 1;
@@ -49,12 +52,17 @@ export class GameEngine {
       this.cameraSystem.camera,
       canvas,
       this.worldSystem.terrain,
+      this.assetManager,
       callbacks.onEditorStateChange,
       (enabled) => this.cameraSystem.setNavigationEnabled(enabled),
     );
 
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
     this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
+  }
+
+  beginAssetPlacement(asset: ResolvedAssetDefinition): void {
+    this.editorSystem.beginAssetPlacement(asset);
   }
 
   start(): void {
@@ -70,6 +78,16 @@ export class GameEngine {
 
   deleteSelected(): void {
     this.editorSystem.deleteSelected();
+  }
+
+  duplicateSelected(): void {
+    this.editorSystem.duplicateSelected();
+  }
+  setGridSnapEnabled(enabled: boolean): void {
+    this.editorSystem.setGridSnapEnabled(enabled);
+  }
+  setRotationSnapEnabled(enabled: boolean): void {
+    this.editorSystem.setRotationSnapEnabled(enabled);
   }
 
   resize(width: number, height: number): void {
@@ -92,6 +110,7 @@ export class GameEngine {
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
     this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
     this.editorSystem.dispose();
+    this.assetManager.dispose();
     this.cameraSystem.dispose();
     this.environmentSystem.dispose();
     this.worldSystem.dispose();

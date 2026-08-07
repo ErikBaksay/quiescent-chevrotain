@@ -1,4 +1,5 @@
 import { BoxHelper, Group, Object3D, PerspectiveCamera, Raycaster, Scene, Vector2 } from 'three';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 const PLACEABLE_ROOT_KEY = 'quiescentChevrotainPlaceableRoot';
 
@@ -34,10 +35,20 @@ export class SelectionSystem {
   register(object: Object3D): Object3D {
     this.objectSequence += 1;
     object.userData[PLACEABLE_ROOT_KEY] = true;
-    object.userData['editorObjectId'] = `prototype-${this.objectSequence}`;
+    object.userData['editorObjectId'] = `object-${this.objectSequence}`;
     this.objectsRoot.add(object);
     object.updateWorldMatrix(true, true);
     return object;
+  }
+
+  duplicateSelected(): Object3D | undefined {
+    if (!this.selected) return undefined;
+    const duplicate = clone(this.selected);
+    duplicate.position.x += 2;
+    duplicate.position.z += 2;
+    this.register(duplicate);
+    this.select(duplicate);
+    return duplicate;
   }
 
   pick(pointer: Vector2, camera: PerspectiveCamera): Object3D | undefined {

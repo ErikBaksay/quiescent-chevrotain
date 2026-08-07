@@ -10,6 +10,9 @@ export class EditorToolbar {
   readonly state = input.required<EditorState>();
   readonly toolChange = output<EditorTool>();
   readonly deleteSelected = output<void>();
+  readonly duplicateSelected = output<void>();
+  readonly gridSnapChange = output<boolean>();
+  readonly rotationSnapChange = output<boolean>();
 
   protected chooseTool(tool: EditorTool): void {
     this.toolChange.emit(tool);

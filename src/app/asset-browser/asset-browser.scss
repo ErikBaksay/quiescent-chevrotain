@@ -1,0 +1,142 @@
+:host {
+  position: absolute;
+  z-index: 3;
+  top: 5.4rem;
+  bottom: 5.6rem;
+  left: 1rem;
+  width: min(17rem, calc(100vw - 2rem));
+  pointer-events: auto;
+}
+
+.asset-browser {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow: hidden;
+  color: #f7f1de;
+  background: rgba(25, 40, 32, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.9rem;
+  box-shadow: 0 1rem 3rem rgba(12, 23, 17, 0.22);
+  backdrop-filter: blur(1rem) saturate(120%);
+
+  header {
+    display: grid;
+    padding: 0.85rem 0.9rem 0.7rem;
+
+    span {
+      color: #d4dca7;
+      font-size: 0.58rem;
+      font-weight: 750;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      margin-top: 0.12rem;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0 0.75rem 0.72rem;
+  overflow-x: auto;
+
+  button {
+    padding: 0.32rem 0.48rem;
+    color: rgba(247, 241, 222, 0.66);
+    font: inherit;
+    font-size: 0.6rem;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0;
+    border-radius: 2rem;
+
+    &.active {
+      color: #24392a;
+      background: #dce3b4;
+    }
+  }
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem;
+  padding: 0 0.75rem 0.8rem;
+  overflow-y: auto;
+}
+
+.asset-card {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.38rem;
+  color: #f7f1de;
+  font: inherit;
+  font-size: 0.65rem;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+
+  img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 0.45rem;
+  }
+
+  &.active {
+    color: #fffbea;
+    border-color: #dce3b4;
+    box-shadow: 0 0 0 1px rgba(220, 227, 180, 0.28);
+  }
+}
+
+.message {
+  margin: 0;
+  padding: 0.9rem;
+  color: rgba(247, 241, 222, 0.62);
+  font-size: 0.68rem;
+}
+
+.message--error {
+  color: #ffd0c2;
+}
+
+@media (max-width: 42rem) {
+  :host {
+    top: auto;
+    right: 0.72rem;
+    bottom: 4.5rem;
+    left: 0.72rem;
+    width: auto;
+  }
+
+  .asset-browser header,
+  .filters,
+  .message {
+    display: none;
+  }
+
+  .asset-grid {
+    display: flex;
+    padding: 0.45rem;
+    overflow-x: auto;
+  }
+
+  .asset-card {
+    min-width: 5rem;
+
+    img {
+      width: 4.25rem;
+    }
+  }
+}

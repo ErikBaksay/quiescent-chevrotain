@@ -11,6 +11,10 @@
 npm-debug.log
 yarn-error.log
 
+# Python
+__pycache__/
+*.py[cod]
+
 # IDEs and editors
 .idea/
 .project
@@ -31,6 +35,7 @@ yarn-error.log
 
 # Miscellaneous
 /.angular/cache
+/.artifacts/blender/
 .sass-cache/
 /connect.lock
 /coverage
