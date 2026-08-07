@@ -1,0 +1,8 @@
+{
+  "id": "greek-revival-residence",
+  "name": "Greek Revival Residence",
+  "category": "residential",
+  "model": "model.glb",
+  "thumbnail": "thumbnail.webp",
+  "defaultScale": 1
+}

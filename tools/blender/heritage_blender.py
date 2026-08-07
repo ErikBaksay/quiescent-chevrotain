@@ -86,7 +86,11 @@ def create_texture_set(
         "orm": directory / f"{name}_orm.png",
     }
     if all(path.exists() for path in paths.values()):
-        return paths
+        existing = bpy.data.images.load(str(paths["base"]), check_existing=False)
+        existing_size = tuple(existing.size)
+        bpy.data.images.remove(existing)
+        if existing_size == (size, size):
+            return paths
 
     rng = np.random.default_rng(seed)
     fine = rng.random((size, size), dtype=np.float32) - 0.5
@@ -530,7 +534,10 @@ def render(
 ) -> None:
     scene = bpy.context.scene
     scene.camera = camera
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    try:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except TypeError:
+        scene.render.engine = "BLENDER_EEVEE"
     scene.eevee.taa_render_samples = samples
     scene.render.resolution_x = width
     scene.render.resolution_y = height
@@ -542,13 +549,19 @@ def render(
     scene.render.image_settings.color_depth = "8"
     scene.render.image_settings.compression = 35
     scene.render.filepath = str(output)
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    try:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except TypeError:
+        scene.render.engine = "BLENDER_EEVEE"
     scene.render.image_settings.file_format = file_format
     scene.render.resolution_percentage = 100
     scene.render.film_transparent = transparent
     scene.render.filepath = str(output)
     scene.render.image_settings.color_mode = "RGBA" if transparent else "RGB"
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    try:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except TypeError:
+        scene.render.engine = "BLENDER_EEVEE"
     if file_format == "WEBP":
         scene.render.image_settings.quality = 92
     bpy.context.scene.render.filepath = str(output)

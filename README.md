@@ -2,7 +2,7 @@
 
 Quiescent Chevrotain is a relaxing, browser-first 3D world builder focused on free-form building, decorating, landscaping, and enjoying the result.
 
-The project is implementing **Stage 3: Southern Heritage Collection and Real Asset System**. It now has a data-driven GLB catalogue, continuous placement ghosts, cached instances, full transforms, duplication, and optional snapping. The Neoclassical Courthouse is the first collection asset and remains at its final-review gate.
+The project is implementing **Stage 3: Southern Heritage Collection and Real Asset System**. It now has a data-driven GLB catalogue, continuous placement ghosts, cached instances, full transforms, duplication, and optional snapping. The approved runtime collection currently includes the Neoclassical Courthouse and Greek Revival Residence.
 
 ## Stack
 

@@ -193,7 +193,7 @@ Completion means the primitive place/select/transform/delete loop is stable with
 - Continuous placement ghost and the eight-piece Southern American Heritage Town Collection
 - Duplicate, scale, and optional snapping
 
-The collection spans 1820–1910 with maintained historical patina. The Neoclassical Courthouse is the first asset and is at final review; each asset requires separate concept and final approval before work begins on the next.
+The collection spans 1820–1910 with maintained historical patina. The approved runtime collection currently includes the Neoclassical Courthouse and Greek Revival Residence; each asset requires separate concept and final approval before work begins on the next.
 
 ### Stage 4 — Editor robustness
 

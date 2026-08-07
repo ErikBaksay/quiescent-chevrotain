@@ -1,4 +1,7 @@
 {
   "version": 1,
-  "manifests": ["models/neoclassical-courthouse/asset.json"]
+  "manifests": [
+    "models/neoclassical-courthouse/asset.json",
+    "models/greek-revival-residence/asset.json"
+  ]
 }
