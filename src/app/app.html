@@ -26,11 +26,12 @@
         <span>Quality</span>
         <select
           aria-label="Vegetation quality"
-          [value]="vegetationQuality()"
           (change)="setVegetationQuality($any($event.target).value, world)"
         >
           @for (quality of vegetationQualities; track quality) {
-            <option [value]="quality">{{ quality[0].toUpperCase() + quality.slice(1) }}</option>
+            <option [value]="quality" [selected]="vegetationQuality() === quality">
+              {{ quality[0].toUpperCase() + quality.slice(1) }}
+            </option>
           }
         </select>
       </label>

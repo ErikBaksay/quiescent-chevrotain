@@ -1,11 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { VEGETATION_QUALITY_STORAGE_KEY } from './game/vegetation/vegetation-quality';
 
 describe('App', () => {
   beforeEach(async () => {
+    localStorage.removeItem(VEGETATION_QUALITY_STORAGE_KEY);
     await TestBed.configureTestingModule({
       imports: [App],
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    localStorage.removeItem(VEGETATION_QUALITY_STORAGE_KEY);
   });
 
   it('creates the application shell', () => {
@@ -24,5 +30,28 @@ describe('App', () => {
     expect(compiled.querySelector('[aria-label="World editor tools"]')).toBeTruthy();
     expect(compiled.querySelector('[aria-label="Asset catalogue"]')).toBeTruthy();
     expect(compiled.querySelector('canvas')?.getAttribute('aria-label')).toContain('3D world');
+  });
+
+  it('selects Ultra when no quality has been persisted', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const quality = fixture.nativeElement.querySelector(
+      '[aria-label="Vegetation quality"]',
+    ) as HTMLSelectElement;
+
+    expect(quality.value).toBe('ultra');
+  });
+
+  it('hydrates the selector from the persisted Ultra quality', () => {
+    localStorage.setItem(VEGETATION_QUALITY_STORAGE_KEY, 'ultra');
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const quality = fixture.nativeElement.querySelector(
+      '[aria-label="Vegetation quality"]',
+    ) as HTMLSelectElement;
+
+    expect(quality.value).toBe('ultra');
   });
 });

@@ -18,7 +18,7 @@ Vegetation remains logically individual but is rendered in shared GPU batches. B
 | High        |             1.5 |       40 m | LOD1, never culled      |               55 / 180 m |
 | Ultra       |             2.0 |  Unlimited | LOD0, never culled      |               90 / 300 m |
 
-Ultra is the default. The player-facing selector persists its value under the versioned `quiescent-chevrotain.vegetation-quality-v2` key; no unreliable GPU-name auto-detection is used.
+Ultra is the default. The player-facing selector persists its value under the versioned `quiescent-chevrotain.vegetation-quality-v3` key; no unreliable GPU-name auto-detection is used.
 
 ## Performance verification
 
