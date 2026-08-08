@@ -3,8 +3,9 @@ import {
   TerrainBrushSettings,
   TerrainSculptTool,
 } from '../world/terrain-sculpt.types';
+import { DEFAULT_TERRAIN_SURFACE, TerrainSurfaceId } from '../world/terrain-surface.types';
 
-export type EditorTool = 'select' | 'place' | 'move' | 'rotate' | 'scale' | 'sculpt';
+export type EditorTool = 'select' | 'place' | 'move' | 'rotate' | 'scale' | 'sculpt' | 'paint';
 export type PlacementStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface EditorState {
@@ -18,6 +19,8 @@ export interface EditorState {
   readonly rotationSnapEnabled: boolean;
   readonly sculptTool: TerrainSculptTool;
   readonly brush: TerrainBrushSettings;
+  readonly surfaceId: TerrainSurfaceId;
+  readonly paintBrush: TerrainBrushSettings;
   readonly canUndoTerrain: boolean;
   readonly canRedoTerrain: boolean;
 }
@@ -33,6 +36,8 @@ export const INITIAL_EDITOR_STATE: EditorState = {
   rotationSnapEnabled: false,
   sculptTool: 'raise',
   brush: DEFAULT_TERRAIN_BRUSH,
+  surfaceId: DEFAULT_TERRAIN_SURFACE,
+  paintBrush: DEFAULT_TERRAIN_BRUSH,
   canUndoTerrain: false,
   canRedoTerrain: false,
 };

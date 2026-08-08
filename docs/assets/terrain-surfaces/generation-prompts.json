@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "generator": "OpenAI built-in image generation workflow",
+  "generatedAt": "2026-08-08",
+  "useCase": "photorealistic-natural",
+  "promptTemplate": "Create a single square, seamless, tileable top-down ground texture for a realistic 3D world builder. Use an ultra-realistic evenly lit orthographic material-scan appearance with high-frequency believable detail, neutral lighting, no baked directional shadows, no horizon, no perspective, no labels, no text, no watermark, and no visible seams.",
+  "materials": [
+    "meadow-grass",
+    "short-mown-grass",
+    "dry-meadow-grass",
+    "mossy-ground",
+    "leaf-litter",
+    "dark-loam",
+    "red-clay",
+    "muddy-earth",
+    "pale-sand",
+    "beach-sand",
+    "river-sand",
+    "fine-gravel",
+    "river-pebbles",
+    "crushed-limestone",
+    "slate-chips",
+    "exposed-rock",
+    "granite-slabs",
+    "cobblestone",
+    "brick-pavers",
+    "concrete",
+    "asphalt",
+    "worn-asphalt",
+    "gravel-shoulder",
+    "shallow-water"
+  ],
+  "avoid": [
+    "buildings",
+    "people",
+    "objects",
+    "strong gradients",
+    "cast shadows",
+    "visible seams",
+    "decorative composition"
+  ]
+}

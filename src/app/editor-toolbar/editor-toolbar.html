@@ -6,6 +6,8 @@
       {{ state().placementError }}
     } @else if (state().tool === 'sculpt') {
       Terrain {{ state().sculptTool }} active
+    } @else if (state().tool === 'paint') {
+      {{ activeSurfaceName() }} active
     } @else {
       {{ state().hasSelection ? 'Object selected' : 'No object selected' }}
     }
@@ -27,6 +29,21 @@
   </button>
 
   <span class="toolbar__divider" aria-hidden="true"></span>
+
+  <button
+    class="tool-button"
+    type="button"
+    title="Paint terrain surfaces"
+    aria-label="Paint terrain surfaces"
+    [class.tool-button--active]="state().tool === 'paint'"
+    [attr.aria-pressed]="state().tool === 'paint'"
+    (click)="chooseTool('paint')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m5 16 8-8 4 4-8 8H5v-4ZM14 7l2-2 3 3-2 2M4 20h16" />
+    </svg>
+    <span class="tool-button__label">Surfaces</span>
+  </button>
 
   <button
     class="tool-button"
@@ -80,46 +97,76 @@
     <span class="tool-button__label">Flatten</span>
   </button>
 
-  @if (state().tool === 'sculpt') {
+  @if (state().tool === 'paint') {
+    <div class="surface-palette" aria-label="Terrain surface palette">
+      @for (family of surfaceFamilies; track family) {
+        <section class="surface-palette__group">
+          <h3>{{ familyLabel(family) }}</h3>
+          <div class="surface-palette__grid">
+            @for (surface of surfacesInFamily(family); track surface.id) {
+              <button
+                class="surface-chip"
+                type="button"
+                [class.surface-chip--active]="state().surfaceId === surface.id"
+                [attr.aria-label]="surface.name"
+                [attr.aria-pressed]="state().surfaceId === surface.id"
+                [title]="surface.name"
+                (click)="chooseSurface(surface.id)"
+              >
+                <span
+                  class="surface-chip__swatch"
+                  aria-hidden="true"
+                  [style]="surfaceSwatchStyle(surface)"
+                ></span>
+                <span>{{ surface.name }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  @if (state().tool === 'sculpt' || state().tool === 'paint') {
     <div class="sculpt-controls" aria-label="Terrain brush settings">
       <label>
         <span
-          >Size <output>{{ state().brush.size | number: '1.0-0' }} m</output></span
+          >Size <output>{{ brushValue('size') | number: '1.0-0' }} m</output></span
         >
         <input
           type="range"
           min="4"
           max="200"
           step="1"
-          [value]="state().brush.size"
+          [value]="brushValue('size')"
           aria-label="Brush size"
           (input)="setBrushSetting('size', $any($event.target).value)"
         />
       </label>
       <label>
         <span
-          >Strength <output>{{ state().brush.strength | number: '1.2-2' }}</output></span
+          >Strength <output>{{ brushValue('strength') | number: '1.2-2' }}</output></span
         >
         <input
           type="range"
           min="0.05"
           max="1"
           step="0.05"
-          [value]="state().brush.strength"
+          [value]="brushValue('strength')"
           aria-label="Brush strength"
           (input)="setBrushSetting('strength', $any($event.target).value)"
         />
       </label>
       <label>
         <span
-          >Falloff <output>{{ state().brush.falloff | number: '1.2-2' }}</output></span
+          >Falloff <output>{{ brushValue('falloff') | number: '1.2-2' }}</output></span
         >
         <input
           type="range"
           min="0"
           max="1"
           step="0.05"
-          [value]="state().brush.falloff"
+          [value]="brushValue('falloff')"
           aria-label="Brush falloff"
           (input)="setBrushSetting('falloff', $any($event.target).value)"
         />

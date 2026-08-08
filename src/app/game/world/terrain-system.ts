@@ -1,5 +1,30 @@
-import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  DataTexture,
+  Group,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  Mesh,
+  MeshStandardMaterial,
+  NearestFilter,
+  RGBAFormat,
+  UnsignedByteType,
+  Vector2,
+} from 'three';
 import { WorldConfig } from './world.config';
+import {
+  DEFAULT_TERRAIN_SURFACE,
+  TERRAIN_SURFACE_INDEX,
+  TERRAIN_SURFACE_LAYER_COUNT,
+  TerrainSurfaceLayers,
+} from './terrain-surface.types';
+import {
+  createFallbackTerrainSurfaceTextures,
+  createTerrainSurfaceMaterial,
+  loadTerrainSurfaceTextures,
+  TerrainSurfaceTextureSet,
+} from './terrain-surface-material';
 
 interface TerrainTile {
   readonly mesh: Mesh<BufferGeometry, MeshStandardMaterial>;
@@ -7,6 +32,10 @@ interface TerrainTile {
   readonly startCellZ: number;
   readonly cellsX: number;
   readonly cellsZ: number;
+  readonly surfaceIds: Uint8Array;
+  readonly surfaceWeights: Uint8Array;
+  readonly surfaceIdTexture: DataTexture;
+  readonly surfaceWeightTexture: DataTexture;
 }
 
 export interface TerrainSampleCoordinate {
@@ -23,14 +52,17 @@ export class TerrainSystem {
   readonly sampleCountZ: number;
 
   private readonly heights: Float32Array;
+  private readonly surfaceIds: Uint8Array;
+  private readonly surfaceWeights: Uint8Array;
   private readonly tiles: TerrainTile[] = [];
-  private readonly terrainMaterial: MeshStandardMaterial;
+  private surfaceTextures: TerrainSurfaceTextureSet;
   private readonly width: number;
   private readonly depth: number;
   private readonly minX: number;
   private readonly minZ: number;
   private readonly minHeight: number;
   private readonly maxHeight: number;
+  private disposed = false;
 
   constructor(private readonly config: WorldConfig) {
     this.width = config.width;
@@ -44,14 +76,15 @@ export class TerrainSystem {
     this.maxHeight = config.terrain.maxHeight;
     this.heights = new Float32Array(this.sampleCountX * this.sampleCountZ);
     this.heights.fill(config.terrain.baseHeight);
+    this.surfaceIds = new Uint8Array(this.heights.length * TERRAIN_SURFACE_LAYER_COUNT);
+    this.surfaceWeights = new Uint8Array(this.heights.length * TERRAIN_SURFACE_LAYER_COUNT);
+    this.surfaceTextures = createFallbackTerrainSurfaceTextures();
+    this.surfaceIds.fill(TERRAIN_SURFACE_INDEX[DEFAULT_TERRAIN_SURFACE]);
+    for (let index = 0; index < this.heights.length; index += 1) {
+      this.surfaceWeights[index * TERRAIN_SURFACE_LAYER_COUNT] = 255;
+    }
 
     this.root.name = 'Terrain';
-    this.terrainMaterial = new MeshStandardMaterial({
-      color: 0xffffff,
-      metalness: 0,
-      roughness: 0.96,
-      vertexColors: true,
-    });
 
     this.createTiles();
   }
@@ -62,6 +95,29 @@ export class TerrainSystem {
 
   get tileCount(): number {
     return this.tiles.length;
+  }
+
+  get surfaceLayerCount(): number {
+    return TERRAIN_SURFACE_LAYER_COUNT;
+  }
+
+  async loadSurfaceTextures(maxAnisotropy = 1): Promise<void> {
+    try {
+      const textures = await loadTerrainSurfaceTextures(maxAnisotropy);
+      if (this.disposed) {
+        disposeTextureSet(textures);
+        return;
+      }
+      const previous = this.surfaceTextures;
+      this.surfaceTextures = textures;
+      for (const tile of this.tiles) {
+        tile.mesh.material.dispose();
+        tile.mesh.material = this.createTileMaterial(tile);
+      }
+      disposeTextureSet(previous);
+    } catch {
+      // The generated fallback atlas remains usable when static assets are unavailable.
+    }
   }
 
   getHeightAtSample(x: number, z: number): number {
@@ -98,6 +154,56 @@ export class TerrainSystem {
       this.maxHeight,
       Math.max(this.minHeight, height),
     );
+  }
+
+  getSurfaceLayers(index: number): TerrainSurfaceLayers {
+    const safeIndex = Math.max(0, Math.min(this.heights.length - 1, Math.round(index)));
+    const offset = safeIndex * TERRAIN_SURFACE_LAYER_COUNT;
+    return {
+      ids: [
+        this.surfaceIds[offset],
+        this.surfaceIds[offset + 1],
+        this.surfaceIds[offset + 2],
+        this.surfaceIds[offset + 3],
+      ],
+      weights: [
+        this.surfaceWeights[offset],
+        this.surfaceWeights[offset + 1],
+        this.surfaceWeights[offset + 2],
+        this.surfaceWeights[offset + 3],
+      ],
+    };
+  }
+
+  setSurfaceLayers(index: number, layers: TerrainSurfaceLayers): void {
+    const safeIndex = Math.max(0, Math.min(this.heights.length - 1, Math.round(index)));
+    const offset = safeIndex * TERRAIN_SURFACE_LAYER_COUNT;
+    for (let layer = 0; layer < TERRAIN_SURFACE_LAYER_COUNT; layer += 1) {
+      this.surfaceIds[offset + layer] = Math.max(0, Math.min(255, layers.ids[layer]));
+      this.surfaceWeights[offset + layer] = Math.max(0, Math.min(255, layers.weights[layer]));
+    }
+  }
+
+  /** Refreshes only paint textures belonging to the changed sample rectangle. */
+  updateSurfaceRegion(
+    minSampleX: number,
+    maxSampleX: number,
+    minSampleZ: number,
+    maxSampleZ: number,
+  ): void {
+    for (const tile of this.tiles) {
+      const tileMaxX = tile.startCellX + tile.cellsX;
+      const tileMaxZ = tile.startCellZ + tile.cellsZ;
+      if (
+        tileMaxX < minSampleX ||
+        tile.startCellX > maxSampleX ||
+        tileMaxZ < minSampleZ ||
+        tile.startCellZ > maxSampleZ
+      ) {
+        continue;
+      }
+      this.updateSurfaceTile(tile);
+    }
   }
 
   getHeightAtWorld(x: number, z: number): number {
@@ -155,9 +261,15 @@ export class TerrainSystem {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.root.removeFromParent();
-    for (const tile of this.tiles) tile.mesh.geometry.dispose();
-    this.terrainMaterial.dispose();
+    for (const tile of this.tiles) {
+      tile.mesh.geometry.dispose();
+      tile.mesh.material.dispose();
+      tile.surfaceIdTexture.dispose();
+      tile.surfaceWeightTexture.dispose();
+    }
+    disposeTextureSet(this.surfaceTextures);
     this.root.clear();
   }
 
@@ -171,13 +283,44 @@ export class TerrainSystem {
         const cellsX = Math.min(cellsPerTile, cellCountX - startCellX);
         const cellsZ = Math.min(cellsPerTile, cellCountZ - startCellZ);
         const geometry = this.createTileGeometry(startCellX, startCellZ, cellsX, cellsZ);
-        const mesh = new Mesh(geometry, this.terrainMaterial);
+        const surfaceIds = new Uint8Array(
+          (cellsX + 1) * (cellsZ + 1) * TERRAIN_SURFACE_LAYER_COUNT,
+        );
+        const surfaceWeights = new Uint8Array(
+          (cellsX + 1) * (cellsZ + 1) * TERRAIN_SURFACE_LAYER_COUNT,
+        );
+        const surfaceIdTexture = this.createSurfaceTexture(
+          surfaceIds,
+          cellsX + 1,
+          cellsZ + 1,
+          NearestFilter,
+        );
+        const surfaceWeightTexture = this.createSurfaceTexture(
+          surfaceWeights,
+          cellsX + 1,
+          cellsZ + 1,
+          LinearMipmapLinearFilter,
+        );
+        const tile: TerrainTile = {
+          mesh: new Mesh(geometry, new MeshStandardMaterial()),
+          startCellX,
+          startCellZ,
+          cellsX,
+          cellsZ,
+          surfaceIds,
+          surfaceWeights,
+          surfaceIdTexture,
+          surfaceWeightTexture,
+        };
+        tile.mesh.material.dispose();
+        tile.mesh.material = this.createTileMaterial(tile);
         const origin = this.sampleToWorld(startCellX, startCellZ);
-        mesh.position.set(origin.x, 0, origin.z);
-        mesh.name = `Terrain tile ${this.tiles.length + 1}`;
-        mesh.receiveShadow = true;
-        this.root.add(mesh);
-        this.tiles.push({ mesh, startCellX, startCellZ, cellsX, cellsZ });
+        tile.mesh.position.set(origin.x, 0, origin.z);
+        tile.mesh.name = `Terrain tile ${this.tiles.length + 1}`;
+        tile.mesh.receiveShadow = true;
+        this.root.add(tile.mesh);
+        this.tiles.push(tile);
+        this.updateSurfaceTile(tile);
       }
     }
   }
@@ -193,9 +336,8 @@ export class TerrainSystem {
     const vertexCount = verticesX * verticesZ;
     const positions = new Float32Array(vertexCount * 3);
     const normals = new Float32Array(vertexCount * 3);
-    const colors = new Float32Array(vertexCount * 3);
+    const uvs = new Float32Array(vertexCount * 2);
     const indices = new Uint32Array(cellsX * cellsZ * 6);
-    const color = new Color();
 
     for (let localZ = 0; localZ < verticesZ; localZ += 1) {
       for (let localX = 0; localX < verticesX; localX += 1) {
@@ -203,15 +345,12 @@ export class TerrainSystem {
         const sampleZ = startCellZ + localZ;
         const vertex = localZ * verticesX + localX;
         const positionOffset = vertex * 3;
-        const world = this.sampleToWorld(sampleX, sampleZ);
         positions[positionOffset] = localX * this.sampleSpacing;
         positions[positionOffset + 1] = this.getHeightAtSample(sampleX, sampleZ);
         positions[positionOffset + 2] = localZ * this.sampleSpacing;
         this.writeNormal(normals, positionOffset, sampleX, sampleZ);
-
-        const variation = this.colorVariation(world.x, world.z);
-        color.setHSL(0.255 + variation * 0.18, 0.34, 0.31 + variation);
-        color.toArray(colors, positionOffset);
+        uvs[vertex * 2] = cellsX > 0 ? localX / cellsX : 0;
+        uvs[vertex * 2 + 1] = cellsZ > 0 ? localZ / cellsZ : 0;
       }
     }
 
@@ -234,7 +373,7 @@ export class TerrainSystem {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     geometry.setAttribute('normal', new BufferAttribute(normals, 3));
-    geometry.setAttribute('color', new BufferAttribute(colors, 3));
+    geometry.setAttribute('uv', new BufferAttribute(uvs, 2));
     geometry.setIndex(new BufferAttribute(indices, 1));
     geometry.computeBoundingSphere();
     return geometry;
@@ -260,6 +399,50 @@ export class TerrainSystem {
     tile.mesh.geometry.computeBoundingSphere();
   }
 
+  private updateSurfaceTile(tile: TerrainTile): void {
+    const verticesX = tile.cellsX + 1;
+    for (let localZ = 0; localZ <= tile.cellsZ; localZ += 1) {
+      for (let localX = 0; localX <= tile.cellsX; localX += 1) {
+        const sourceIndex = this.sampleIndex(tile.startCellX + localX, tile.startCellZ + localZ);
+        const sourceOffset = sourceIndex * TERRAIN_SURFACE_LAYER_COUNT;
+        const localOffset = (localZ * verticesX + localX) * TERRAIN_SURFACE_LAYER_COUNT;
+        for (let layer = 0; layer < TERRAIN_SURFACE_LAYER_COUNT; layer += 1) {
+          tile.surfaceIds[localOffset + layer] = this.surfaceIds[sourceOffset + layer];
+          tile.surfaceWeights[localOffset + layer] = this.surfaceWeights[sourceOffset + layer];
+        }
+      }
+    }
+    tile.surfaceIdTexture.needsUpdate = true;
+    tile.surfaceWeightTexture.needsUpdate = true;
+  }
+
+  private createSurfaceTexture(
+    data: Uint8Array,
+    width: number,
+    height: number,
+    filter: typeof LinearFilter | typeof LinearMipmapLinearFilter | typeof NearestFilter,
+  ): DataTexture {
+    const texture = new DataTexture(data, width, height, RGBAFormat, UnsignedByteType);
+    texture.flipY = false;
+    texture.minFilter = filter;
+    texture.magFilter = filter === NearestFilter ? NearestFilter : LinearFilter;
+    texture.generateMipmaps = filter === LinearMipmapLinearFilter;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  private createTileMaterial(tile: TerrainTile): MeshStandardMaterial {
+    return createTerrainSurfaceMaterial({
+      textures: this.surfaceTextures,
+      layerIds: tile.surfaceIdTexture,
+      layerWeights: tile.surfaceWeightTexture,
+      tileWorldSize: new Vector2(
+        tile.cellsX * this.sampleSpacing,
+        tile.cellsZ * this.sampleSpacing,
+      ),
+    });
+  }
+
   private writeNormal(
     target: Float32Array,
     offset: number,
@@ -278,17 +461,6 @@ export class TerrainSystem {
     target[offset + 2] = -dz / length;
   }
 
-  private colorVariation(x: number, z: number): number {
-    const broadVariation = Math.sin(x * 0.009) * 0.45 + Math.cos(z * 0.007) * 0.35;
-    const fineVariation = this.hashPosition(x, z) - 0.5;
-    return broadVariation * 0.018 + fineVariation * 0.024;
-  }
-
-  private hashPosition(x: number, z: number): number {
-    const value = Math.sin(x * 12.9898 + z * 78.233) * 43_758.5453;
-    return value - Math.floor(value);
-  }
-
   private sampleIndexInternal(x: number, z: number): number {
     return this.clampSampleZ(z) * this.sampleCountX + this.clampSampleX(x);
   }
@@ -303,5 +475,20 @@ export class TerrainSystem {
 
   private clampSampleCoordinate(value: number, count: number): number {
     return Math.max(0, Math.min(count - 1, value));
+  }
+}
+
+function disposeTextureSet(textures: TerrainSurfaceTextureSet): void {
+  const disposed = new Set<unknown>();
+  for (const texture of [
+    textures.albedo,
+    textures.normal,
+    textures.roughness,
+    textures.ao,
+    textures.parameters,
+  ]) {
+    if (disposed.has(texture)) continue;
+    disposed.add(texture);
+    texture.dispose();
   }
 }

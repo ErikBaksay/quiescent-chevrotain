@@ -1,0 +1,103 @@
+{
+  "tileSize": 256,
+  "columns": 6,
+  "rows": 4,
+  "surfaces": [
+    {
+      "id": "meadow-grass",
+      "index": 0
+    },
+    {
+      "id": "short-mown-grass",
+      "index": 1
+    },
+    {
+      "id": "dry-meadow-grass",
+      "index": 2
+    },
+    {
+      "id": "mossy-ground",
+      "index": 3
+    },
+    {
+      "id": "leaf-litter",
+      "index": 4
+    },
+    {
+      "id": "dark-loam",
+      "index": 5
+    },
+    {
+      "id": "red-clay",
+      "index": 6
+    },
+    {
+      "id": "muddy-earth",
+      "index": 7
+    },
+    {
+      "id": "pale-sand",
+      "index": 8
+    },
+    {
+      "id": "beach-sand",
+      "index": 9
+    },
+    {
+      "id": "river-sand",
+      "index": 10
+    },
+    {
+      "id": "fine-gravel",
+      "index": 11
+    },
+    {
+      "id": "river-pebbles",
+      "index": 12
+    },
+    {
+      "id": "crushed-limestone",
+      "index": 13
+    },
+    {
+      "id": "slate-chips",
+      "index": 14
+    },
+    {
+      "id": "exposed-rock",
+      "index": 15
+    },
+    {
+      "id": "granite-slabs",
+      "index": 16
+    },
+    {
+      "id": "cobblestone",
+      "index": 17
+    },
+    {
+      "id": "brick-pavers",
+      "index": 18
+    },
+    {
+      "id": "concrete",
+      "index": 19
+    },
+    {
+      "id": "asphalt",
+      "index": 20
+    },
+    {
+      "id": "worn-asphalt",
+      "index": 21
+    },
+    {
+      "id": "gravel-shoulder",
+      "index": 22
+    },
+    {
+      "id": "shallow-water",
+      "index": 23
+    }
+  ]
+}

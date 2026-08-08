@@ -43,6 +43,7 @@ Open `http://localhost:4200`.
 - `Escape`: cancel placement or the active transform tool, then deselect
 - Terrain tools: Raise, Lower, Smooth, and Flatten with left-drag sculpting
 - Terrain brush controls: size, strength, and falloff; `Ctrl/Cmd + Z` and `Ctrl/Cmd + Y` undo or redo terrain strokes
+- Surface painting: choose from 24 grass, earth, sand, gravel, stone, paving, asphalt, and shallow-water materials, then paint with a soft brush
 - Toolbar toggles: optional 1 m placement/movement grid and 15° rotation snapping
 
 ## Commands

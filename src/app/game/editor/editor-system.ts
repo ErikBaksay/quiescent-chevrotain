@@ -8,7 +8,10 @@ import { TransformSystem } from './transform-system';
 import { VegetationSystem } from '../vegetation/vegetation-system';
 import { VegetationQuality } from '../vegetation/vegetation-quality';
 import { TerrainSystem } from '../world/terrain-system';
+import { TerrainHistory } from '../world/terrain-history';
+import { TerrainPaintSystem } from '../world/terrain-paint-system';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
+import { DEFAULT_TERRAIN_SURFACE, TerrainSurfaceId } from '../world/terrain-surface.types';
 import { TerrainSculptSystem } from '../world/terrain-sculpt-system';
 
 interface PointerStart {
@@ -24,12 +27,15 @@ export class EditorSystem {
   private readonly transformSystem: TransformSystem;
   private readonly vegetationSystem: VegetationSystem;
   private readonly terrainSculptSystem: TerrainSculptSystem | undefined;
+  private readonly terrainPaintSystem: TerrainPaintSystem | undefined;
+  private readonly terrainHistory: TerrainHistory | undefined;
   private readonly pointer = new Vector2();
   private activeTool: EditorTool = INITIAL_EDITOR_STATE.tool;
   private pointerStart: PointerStart | undefined;
-  private sculptPointerId: number | undefined;
-  private pendingSculptPointer: { readonly pointer: Vector2; readonly time: number } | undefined;
-  private sculptFrameId: number | undefined;
+  private terrainPointerId: number | undefined;
+  private activeTerrainStroke: TerrainSculptSystem | TerrainPaintSystem | undefined;
+  private pendingTerrainPointer: { readonly pointer: Vector2; readonly time: number } | undefined;
+  private terrainFrameId: number | undefined;
   private gridSnapEnabled = false;
   private rotationSnapEnabled = false;
 
@@ -47,8 +53,11 @@ export class EditorSystem {
     this.selectionSystem = new SelectionSystem(scene);
     this.vegetationSystem = new VegetationSystem(scene, assets);
     if (terrainSystem) {
-      this.terrainSculptSystem = new TerrainSculptSystem(terrainSystem);
+      this.terrainHistory = new TerrainHistory();
+      this.terrainSculptSystem = new TerrainSculptSystem(terrainSystem, this.terrainHistory);
+      this.terrainPaintSystem = new TerrainPaintSystem(terrainSystem, this.terrainHistory);
       scene.add(this.terrainSculptSystem.preview);
+      scene.add(this.terrainPaintSystem.preview);
     }
     this.transformSystem = new TransformSystem(
       scene,
@@ -82,13 +91,15 @@ export class EditorSystem {
       rotationSnapEnabled: this.rotationSnapEnabled,
       sculptTool: this.terrainSculptSystem?.tool ?? INITIAL_EDITOR_STATE.sculptTool,
       brush: this.terrainSculptSystem?.brushSettings ?? INITIAL_EDITOR_STATE.brush,
-      canUndoTerrain: this.terrainSculptSystem?.canUndo ?? false,
-      canRedoTerrain: this.terrainSculptSystem?.canRedo ?? false,
+      surfaceId: this.terrainPaintSystem?.surface ?? INITIAL_EDITOR_STATE.surfaceId,
+      paintBrush: this.terrainPaintSystem?.brushSettings ?? INITIAL_EDITOR_STATE.paintBrush,
+      canUndoTerrain: this.terrainHistory?.canUndo ?? false,
+      canRedoTerrain: this.terrainHistory?.canRedo ?? false,
     };
   }
 
   beginAssetPlacement(asset: ResolvedAssetDefinition): void {
-    this.stopSculpt(false);
+    this.stopTerrainStroke(false);
     this.activeTool = 'place';
     this.transformSystem.detach();
     this.selectionSystem.select(undefined);
@@ -103,9 +114,13 @@ export class EditorSystem {
       this.setSculptTool(this.terrainSculptSystem?.tool ?? 'raise');
       return;
     }
+    if (tool === 'paint') {
+      this.setTerrainSurface(this.terrainPaintSystem?.surface ?? DEFAULT_TERRAIN_SURFACE);
+      return;
+    }
     if ((tool === 'move' || tool === 'rotate' || tool === 'scale') && !this.selectedObject) return;
     if (tool === 'place' && !this.state.activeAssetId) return;
-    this.stopSculpt(false);
+    this.stopTerrainStroke(false);
     if (this.activeTool === 'place' && tool !== 'place') this.placementSystem.cancel();
     this.activeTool = tool;
     this.transformSystem.setTool(tool, this.selectedObject);
@@ -115,8 +130,11 @@ export class EditorSystem {
 
   setSculptTool(tool: TerrainSculptTool): void {
     if (!this.terrainSculptSystem) return;
-    if (this.activeTool === 'sculpt' && this.terrainSculptSystem.tool !== tool)
-      this.stopSculpt(false);
+    if (
+      this.terrainPointerId !== undefined ||
+      (this.activeTool === 'sculpt' && this.terrainSculptSystem.tool !== tool)
+    )
+      this.stopTerrainStroke(false);
     if (this.activeTool !== 'sculpt') {
       if (this.activeTool === 'place') this.placementSystem.cancel();
       this.transformSystem.detach();
@@ -131,17 +149,37 @@ export class EditorSystem {
 
   setTerrainBrush(settings: TerrainBrushSettings): void {
     this.terrainSculptSystem?.setBrush(settings);
+    this.terrainPaintSystem?.setBrush(settings);
+    this.emitState();
+  }
+
+  setTerrainSurface(surface: TerrainSurfaceId): void {
+    if (!this.terrainPaintSystem) return;
+    if (
+      this.terrainPointerId !== undefined ||
+      (this.activeTool === 'paint' && this.terrainPaintSystem.surface !== surface)
+    )
+      this.stopTerrainStroke(false);
+    if (this.activeTool !== 'paint') {
+      if (this.activeTool === 'place') this.placementSystem.cancel();
+      this.transformSystem.detach();
+      this.selectionSystem.select(undefined);
+      this.vegetationSystem.select(undefined);
+      this.activeTool = 'paint';
+      this.canvas.style.cursor = 'crosshair';
+    }
+    this.terrainPaintSystem.setSurface(surface);
     this.emitState();
   }
 
   undoTerrain(): void {
-    if (this.transformSystem.isDragging || this.sculptPointerId !== undefined) return;
-    if (this.terrainSculptSystem?.undo()) this.emitState();
+    if (this.transformSystem.isDragging || this.terrainPointerId !== undefined) return;
+    if (this.terrainHistory?.undo()) this.emitState();
   }
 
   redoTerrain(): void {
-    if (this.transformSystem.isDragging || this.sculptPointerId !== undefined) return;
-    if (this.terrainSculptSystem?.redo()) this.emitState();
+    if (this.transformSystem.isDragging || this.terrainPointerId !== undefined) return;
+    if (this.terrainHistory?.redo()) this.emitState();
   }
 
   duplicateSelected(): void {
@@ -196,8 +234,9 @@ export class EditorSystem {
     this.canvas.removeEventListener('pointerleave', this.handlePointerCancel, true);
     window.removeEventListener('keydown', this.handleKeyDown);
     this.transformSystem.dispose();
-    this.stopSculpt(false);
+    this.stopTerrainStroke(false);
     this.terrainSculptSystem?.dispose();
+    this.terrainPaintSystem?.dispose();
     this.vegetationSystem.dispose();
     this.selectionSystem.dispose();
     this.placementSystem.dispose();
@@ -205,28 +244,31 @@ export class EditorSystem {
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
     if (event.button !== 0 || this.transformSystem.isDragging) return;
-    if (this.activeTool === 'sculpt' && this.terrainSculptSystem && this.updatePointer(event)) {
-      if (this.terrainSculptSystem.beginStroke(this.pointer, this.camera)) {
-        this.sculptPointerId = event.pointerId;
+    const terrainSystem = this.activeTerrainSystem;
+    if (terrainSystem && this.updatePointer(event)) {
+      if (terrainSystem.beginStroke(this.pointer, this.camera)) {
+        this.terrainPointerId = event.pointerId;
+        this.activeTerrainStroke = terrainSystem;
         this.canvas.setPointerCapture?.(event.pointerId);
         this.setCameraNavigationEnabled(false);
         event.preventDefault();
       }
       return;
     }
-    if (this.activeTool !== 'sculpt')
+    if (!terrainSystem)
       this.pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
-    if (this.activeTool === 'sculpt' && this.terrainSculptSystem) {
+    const terrainSystem = this.activeTerrainStroke ?? this.activeTerrainSystem;
+    if (terrainSystem) {
       const pointer = this.pointerFromEvent(event);
-      if (this.sculptPointerId === event.pointerId) {
-        this.terrainSculptSystem.updatePointer(pointer, this.camera);
-        this.queueSculptStroke(pointer);
+      if (this.terrainPointerId === event.pointerId) {
+        terrainSystem.updatePointer(pointer, this.camera);
+        this.queueTerrainStroke(pointer);
         event.preventDefault();
       } else {
-        this.terrainSculptSystem.updatePointer(pointer, this.camera);
+        terrainSystem.updatePointer(pointer, this.camera);
       }
       this.emitState();
     } else if (this.activeTool === 'place' && this.updatePointer(event)) {
@@ -235,12 +277,13 @@ export class EditorSystem {
   };
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
-    if (this.sculptPointerId === event.pointerId) {
-      this.queueSculptStroke(this.pointerFromEvent(event));
-      this.flushSculptStroke();
-      this.terrainSculptSystem?.endStroke(true);
+    if (this.terrainPointerId === event.pointerId) {
+      this.queueTerrainStroke(this.pointerFromEvent(event));
+      this.flushTerrainStroke();
+      this.activeTerrainStroke?.endStroke(true);
       this.canvas.releasePointerCapture?.(event.pointerId);
-      this.sculptPointerId = undefined;
+      this.terrainPointerId = undefined;
+      this.activeTerrainStroke = undefined;
       this.setCameraNavigationEnabled(true);
       event.preventDefault();
       this.emitState();
@@ -265,15 +308,17 @@ export class EditorSystem {
   };
 
   private readonly handlePointerCancel = (event: PointerEvent): void => {
-    if (this.sculptPointerId !== undefined && event.type === 'pointercancel') {
-      this.clearPendingSculptStroke();
-      this.terrainSculptSystem?.endStroke(false);
-      this.canvas.releasePointerCapture?.(this.sculptPointerId);
-      this.sculptPointerId = undefined;
+    if (this.terrainPointerId !== undefined && event.type === 'pointercancel') {
+      this.clearPendingTerrainStroke();
+      this.activeTerrainStroke?.endStroke(false);
+      this.canvas.releasePointerCapture?.(this.terrainPointerId);
+      this.terrainPointerId = undefined;
+      this.activeTerrainStroke = undefined;
       this.setCameraNavigationEnabled(true);
       this.emitState();
-    } else if (this.sculptPointerId === undefined) {
+    } else if (this.terrainPointerId === undefined) {
       this.terrainSculptSystem?.clearPointer();
+      this.terrainPaintSystem?.clearPointer();
     }
     this.pointerStart = undefined;
     this.placementSystem.clearPlacementPoint();
@@ -349,16 +394,17 @@ export class EditorSystem {
     this.emitState();
   }
 
-  private stopSculpt(commit: boolean): void {
-    if (!this.terrainSculptSystem) return;
-    this.clearPendingSculptStroke();
-    if (this.sculptPointerId !== undefined) {
-      this.terrainSculptSystem.endStroke(commit);
-      this.canvas.releasePointerCapture?.(this.sculptPointerId);
-      this.sculptPointerId = undefined;
+  private stopTerrainStroke(commit: boolean): void {
+    this.clearPendingTerrainStroke();
+    if (this.terrainPointerId !== undefined) {
+      this.activeTerrainStroke?.endStroke(commit);
+      this.canvas.releasePointerCapture?.(this.terrainPointerId);
+      this.terrainPointerId = undefined;
+      this.activeTerrainStroke = undefined;
       this.setCameraNavigationEnabled(true);
     }
-    this.terrainSculptSystem.clearPointer();
+    this.terrainSculptSystem?.clearPointer();
+    this.terrainPaintSystem?.clearPointer();
   }
 
   private async duplicateSelectedVegetation(): Promise<void> {
@@ -387,35 +433,41 @@ export class EditorSystem {
     return this.pointer;
   }
 
-  private queueSculptStroke(pointer: Vector2, time = performance.now()): void {
-    this.pendingSculptPointer = { pointer: pointer.clone(), time };
+  private queueTerrainStroke(pointer: Vector2, time = performance.now()): void {
+    this.pendingTerrainPointer = { pointer: pointer.clone(), time };
     if (typeof requestAnimationFrame !== 'function') {
-      this.flushSculptStroke();
+      this.flushTerrainStroke();
       return;
     }
-    if (this.sculptFrameId !== undefined) return;
-    this.sculptFrameId = requestAnimationFrame(() => {
-      this.sculptFrameId = undefined;
-      this.flushSculptStroke();
+    if (this.terrainFrameId !== undefined) return;
+    this.terrainFrameId = requestAnimationFrame(() => {
+      this.terrainFrameId = undefined;
+      this.flushTerrainStroke();
     });
   }
 
-  private flushSculptStroke(): void {
-    if (this.sculptFrameId !== undefined) {
-      cancelAnimationFrame(this.sculptFrameId);
-      this.sculptFrameId = undefined;
+  private flushTerrainStroke(): void {
+    if (this.terrainFrameId !== undefined) {
+      cancelAnimationFrame(this.terrainFrameId);
+      this.terrainFrameId = undefined;
     }
-    const pending = this.pendingSculptPointer;
-    this.pendingSculptPointer = undefined;
-    if (pending) this.terrainSculptSystem?.updateStroke(pending.pointer, this.camera, pending.time);
+    const pending = this.pendingTerrainPointer;
+    this.pendingTerrainPointer = undefined;
+    if (pending) this.activeTerrainStroke?.updateStroke(pending.pointer, this.camera, pending.time);
   }
 
-  private clearPendingSculptStroke(): void {
-    this.pendingSculptPointer = undefined;
-    if (this.sculptFrameId !== undefined) {
-      cancelAnimationFrame(this.sculptFrameId);
-      this.sculptFrameId = undefined;
+  private clearPendingTerrainStroke(): void {
+    this.pendingTerrainPointer = undefined;
+    if (this.terrainFrameId !== undefined) {
+      cancelAnimationFrame(this.terrainFrameId);
+      this.terrainFrameId = undefined;
     }
+  }
+
+  private get activeTerrainSystem(): TerrainSculptSystem | TerrainPaintSystem | undefined {
+    if (this.activeTool === 'sculpt') return this.terrainSculptSystem;
+    if (this.activeTool === 'paint') return this.terrainPaintSystem;
+    return undefined;
   }
 
   private isEditableTarget(target: EventTarget | null): boolean {

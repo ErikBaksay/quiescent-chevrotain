@@ -17,8 +17,11 @@ describe('EditorToolbar', () => {
       'button',
     ) as NodeListOf<HTMLButtonElement>;
 
-    expect(buttons).toHaveLength(14);
+    expect(buttons).toHaveLength(15);
     expect(fixture.nativeElement.querySelector('[aria-label="Select objects"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[aria-label="Paint terrain surfaces"]'),
+    ).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[aria-label="Raise terrain"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[aria-label="Undo terrain stroke"]')).toBeTruthy();
     expect(
@@ -80,5 +83,28 @@ describe('EditorToolbar', () => {
 
     expect(sculptToolChange).toHaveBeenCalledWith('flatten');
     expect(brushChange).toHaveBeenCalledWith({ ...INITIAL_EDITOR_STATE.brush, size: 48 });
+  });
+
+  it('emits surface selection and paint brush settings', () => {
+    const fixture = TestBed.createComponent(EditorToolbar);
+    fixture.componentRef.setInput('state', {
+      ...INITIAL_EDITOR_STATE,
+      tool: 'paint',
+    });
+    const surfaceChange = vi.fn();
+    const brushChange = vi.fn();
+    fixture.componentInstance.surfaceChange.subscribe(surfaceChange);
+    fixture.componentInstance.brushChange.subscribe(brushChange);
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[aria-label="Asphalt"]')?.click();
+    const size = fixture.nativeElement.querySelector(
+      '[aria-label="Brush size"]',
+    ) as HTMLInputElement;
+    size.value = '64';
+    size.dispatchEvent(new Event('input'));
+
+    expect(surfaceChange).toHaveBeenCalledWith('asphalt');
+    expect(brushChange).toHaveBeenCalledWith({ ...INITIAL_EDITOR_STATE.paintBrush, size: 64 });
   });
 });

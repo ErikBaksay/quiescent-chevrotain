@@ -18,6 +18,7 @@ import { EditorState, EditorTool } from '../editor/editor.types';
 import { ResolvedAssetDefinition } from '../../assets/asset.types';
 import { VegetationQuality } from '../vegetation/vegetation-quality';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
+import { TerrainSurfaceId } from '../world/terrain-surface.types';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -117,6 +118,10 @@ export class GameViewport implements AfterViewInit, OnDestroy {
 
   setTerrainBrush(settings: TerrainBrushSettings): void {
     this.engine?.setTerrainBrush(settings);
+  }
+
+  setTerrainSurface(surface: TerrainSurfaceId): void {
+    this.engine?.setTerrainSurface(surface);
   }
 
   undoTerrain(): void {

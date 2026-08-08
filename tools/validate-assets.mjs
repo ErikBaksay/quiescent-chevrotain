@@ -4,6 +4,7 @@ import path from 'node:path';
 const projectRoot = process.cwd();
 const assetsRoot = path.resolve(projectRoot, 'public/assets');
 const catalogPath = path.join(assetsRoot, 'catalog.json');
+const terrainRoot = path.join(assetsRoot, 'textures', 'terrain');
 const validCategories = new Set([
   'civic',
   'residential',
@@ -232,6 +233,42 @@ if (!catalog || typeof catalog !== 'object' || Array.isArray(catalog)) {
       await validateManifest(manifestPath, ids);
     }
   }
+}
+
+const terrainAtlasPath = path.join(terrainRoot, 'terrain-atlas.json');
+const terrainAtlas = await readJson(
+  terrainAtlasPath,
+  'public/assets/textures/terrain/terrain-atlas.json',
+);
+if (
+  !terrainAtlas ||
+  terrainAtlas.tileSize !== 256 ||
+  terrainAtlas.columns !== 6 ||
+  terrainAtlas.rows !== 4
+) {
+  report(
+    'public/assets/textures/terrain/terrain-atlas.json',
+    'must describe a 256px six-by-four atlas',
+  );
+} else if (
+  !Array.isArray(terrainAtlas.surfaces) ||
+  terrainAtlas.surfaces.length !== 24 ||
+  terrainAtlas.surfaces.some((surface, index) => surface?.index !== index)
+) {
+  report(
+    'public/assets/textures/terrain/terrain-atlas.json',
+    'must contain 24 consecutive surface indices',
+  );
+}
+
+for (const file of [
+  'terrain-albedo-atlas.webp',
+  'terrain-normal-atlas.webp',
+  'terrain-roughness-atlas.webp',
+  'terrain-ao-atlas.webp',
+  'terrain-swatches.webp',
+]) {
+  await validateWebp(path.join(terrainRoot, file), `public/assets/textures/terrain/${file}`);
 }
 
 if (errors.length > 0) {
