@@ -116,6 +116,40 @@
   background: rgba(255, 255, 255, 0.13);
 }
 
+.sculpt-controls {
+  display: flex;
+  gap: 0.58rem;
+  align-items: center;
+  padding: 0.28rem 0.45rem;
+  color: rgba(247, 243, 224, 0.78);
+  border-left: 1px solid rgba(255, 255, 255, 0.13);
+
+  label {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 5.5rem;
+    font-size: 0.55rem;
+    font-weight: 720;
+    letter-spacing: 0.03em;
+  }
+
+  label > span {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.3rem;
+  }
+
+  output {
+    color: #dbe2b2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input {
+    width: 5.5rem;
+    accent-color: #dbe2b2;
+  }
+}
+
 .toolbar__status {
   position: absolute;
   width: 1px;
@@ -149,5 +183,17 @@
 
   .tool-button--place {
     min-width: 3rem;
+  }
+
+  .sculpt-controls {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.5rem);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(5.2rem, 1fr));
+    padding: 0.55rem;
+    background: rgba(25, 41, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 0.72rem;
   }
 }

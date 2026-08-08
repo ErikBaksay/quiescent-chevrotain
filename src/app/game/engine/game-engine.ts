@@ -5,6 +5,7 @@ import { EditorSystem } from '../editor/editor-system';
 import { EditorState, EditorTool } from '../editor/editor.types';
 import { WORLD_CONFIG } from '../world/world.config';
 import { WorldSystem } from '../world/world-system';
+import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { CameraSystem } from './camera-system';
 import { EnvironmentSystem } from './environment-system';
 import { VEGETATION_QUALITY_PROFILES, VegetationQuality } from '../vegetation/vegetation-quality';
@@ -57,6 +58,7 @@ export class GameEngine {
       this.assetManager,
       callbacks.onEditorStateChange,
       (enabled) => this.cameraSystem.setNavigationEnabled(enabled),
+      this.worldSystem.terrainSystem,
     );
 
     this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
@@ -96,6 +98,22 @@ export class GameEngine {
   }
   setRotationSnapEnabled(enabled: boolean): void {
     this.editorSystem.setRotationSnapEnabled(enabled);
+  }
+
+  setSculptTool(tool: TerrainSculptTool): void {
+    this.editorSystem.setSculptTool(tool);
+  }
+
+  setTerrainBrush(settings: TerrainBrushSettings): void {
+    this.editorSystem.setTerrainBrush(settings);
+  }
+
+  undoTerrain(): void {
+    this.editorSystem.undoTerrain();
+  }
+
+  redoTerrain(): void {
+    this.editorSystem.redoTerrain();
   }
 
   resize(width: number, height: number): void {

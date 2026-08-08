@@ -116,7 +116,7 @@ export class PlacementSystem {
     this.terrain.updateWorldMatrix(true, false);
     camera.updateWorldMatrix(true, false);
     this.raycaster.setFromCamera(pointer, camera);
-    const intersection = this.raycaster.intersectObject(this.terrain, false)[0];
+    const intersection = this.raycaster.intersectObject(this.terrain, true)[0];
     if (!intersection) {
       this.clearPlacementPoint();
       return false;

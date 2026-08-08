@@ -41,6 +41,8 @@ Open `http://localhost:4200`.
 - `Ctrl/Cmd + D`: duplicate the selected asset with a 2 m X/Z offset
 - `Delete` or `Backspace`: delete the selected asset
 - `Escape`: cancel placement or the active transform tool, then deselect
+- Terrain tools: Raise, Lower, Smooth, and Flatten with left-drag sculpting
+- Terrain brush controls: size, strength, and falloff; `Ctrl/Cmd + Z` and `Ctrl/Cmd + Y` undo or redo terrain strokes
 - Toolbar toggles: optional 1 m placement/movement grid and 15° rotation snapping
 
 ## Commands

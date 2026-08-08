@@ -1,7 +1,13 @@
 export interface WorldConfig {
   readonly width: number;
   readonly depth: number;
-  readonly terrainSegments: number;
+  readonly terrain: {
+    readonly sampleSpacing: number;
+    readonly tileSize: number;
+    readonly minHeight: number;
+    readonly maxHeight: number;
+    readonly baseHeight: number;
+  };
   readonly camera: {
     readonly near: number;
     readonly far: number;
@@ -16,7 +22,13 @@ export interface WorldConfig {
 export const WORLD_CONFIG = {
   width: 2_000,
   depth: 2_000,
-  terrainSegments: 128,
+  terrain: {
+    sampleSpacing: 2,
+    tileSize: 250,
+    minHeight: -100,
+    maxHeight: 100,
+    baseHeight: 0,
+  },
   camera: {
     near: 0.5,
     far: 5_000,

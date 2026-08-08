@@ -63,6 +63,10 @@
     (duplicateSelected)="world.duplicateSelected()"
     (gridSnapChange)="world.setGridSnapEnabled($event)"
     (rotationSnapChange)="world.setRotationSnapEnabled($event)"
+    (sculptToolChange)="world.setSculptTool($event)"
+    (brushChange)="world.setTerrainBrush($event)"
+    (undoTerrain)="world.undoTerrain()"
+    (redoTerrain)="world.redoTerrain()"
   ></app-editor-toolbar>
 
   <aside class="camera-guide" aria-label="Camera controls">
