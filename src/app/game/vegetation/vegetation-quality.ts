@@ -42,7 +42,7 @@ export const VEGETATION_QUALITY_PROFILES: Record<VegetationQuality, VegetationQu
 };
 
 export const DEFAULT_VEGETATION_QUALITY: VegetationQuality = 'ultra';
-export const VEGETATION_QUALITY_STORAGE_KEY = 'quiescent-chevrotain.vegetation-quality-v2';
+export const VEGETATION_QUALITY_STORAGE_KEY = 'quiescent-chevrotain.vegetation-quality-v3';
 
 export function loadVegetationQuality(storage: Pick<Storage, 'getItem'>): VegetationQuality {
   const stored = storage.getItem(VEGETATION_QUALITY_STORAGE_KEY);

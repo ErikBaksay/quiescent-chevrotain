@@ -18,6 +18,7 @@ describe('vegetation quality persistence', () => {
   });
 
   it('loads supported values and rejects stale values', () => {
+    expect(loadVegetationQuality({ getItem: () => null })).toBe('ultra');
     expect(loadVegetationQuality({ getItem: () => 'performance' })).toBe('performance');
     expect(loadVegetationQuality({ getItem: () => 'cinematic' })).toBe(DEFAULT_VEGETATION_QUALITY);
   });
@@ -25,6 +26,7 @@ describe('vegetation quality persistence', () => {
   it('writes the stable storage key', () => {
     const setItem = vi.fn();
     saveVegetationQuality({ setItem }, 'ultra');
-    expect(setItem).toHaveBeenCalledWith(VEGETATION_QUALITY_STORAGE_KEY, 'ultra');
+    expect(VEGETATION_QUALITY_STORAGE_KEY).toBe('quiescent-chevrotain.vegetation-quality-v3');
+    expect(setItem).toHaveBeenCalledWith('quiescent-chevrotain.vegetation-quality-v3', 'ultra');
   });
 });
