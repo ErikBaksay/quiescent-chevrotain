@@ -62,16 +62,17 @@ The primary camera should resemble a polished creative or management game camera
 
 Camera controls:
 
-- Primary-button drag: orbit
+- `W`, `A`, `S`, `D` or arrow keys: move camera
+- Middle-button drag: orbit
 - Secondary-button drag: pan
-- Middle-button drag or wheel: zoom
+- Wheel: zoom
 - Touch: one-finger orbit, two-finger pan/zoom
 
 Stage 3 editing shortcuts:
 
 - `G`: move
 - `R`: rotate
-- `S`: scale
+- `Shift + S`: scale
 - `Ctrl/Cmd + D`: duplicate with a 2 m X/Z offset
 - `Delete`: delete
 - `Escape`: leave the active tool, then deselect

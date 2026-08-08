@@ -31,13 +31,14 @@ Open `http://localhost:4200`.
 
 ## Controls
 
-- Primary-button drag: orbit camera
+- `W`, `A`, `S`, `D` or arrow keys: move camera
+- Middle-button drag: orbit camera
 - Secondary-button drag: pan camera
-- Wheel or middle-button drag: zoom camera
+- Wheel: zoom camera
 - Select an asset card, then click the terrain: place instances continuously
 - `G`: move the selected asset
 - `R`: rotate the selected asset
-- `S`: scale the selected asset
+- `Shift + S`: scale the selected asset
 - `Ctrl/Cmd + D`: duplicate the selected asset with a 2 m X/Z offset
 - `Delete` or `Backspace`: delete the selected asset
 - `Escape`: cancel placement or the active transform tool, then deselect
@@ -58,6 +59,11 @@ npm run assets:validate # Validate the catalogue, manifests, GLB headers, and th
 npm run format   # Format source and documentation
 npm run format:check
 ```
+
+## Contribution workflow
+
+When staged changes are reviewed for handoff, include a concise suggested commit message. Do not
+create the commit unless it is explicitly requested.
 
 ## Project structure
 
