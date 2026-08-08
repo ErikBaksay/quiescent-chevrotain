@@ -6,8 +6,10 @@ import {
   TerrainHeightChange,
   TerrainSurfaceChange,
   WorldSaveV2,
+  WorldSaveV3,
 } from './save.types';
 import { TERRAIN_SURFACES } from '../world/terrain-surface.types';
+import { DEFAULT_TIME_OF_DAY_MINUTES, MINUTES_PER_DAY } from '../engine/environment.types';
 
 export class SaveValidationError extends Error {
   constructor(message: string) {
@@ -16,11 +18,11 @@ export class SaveValidationError extends Error {
   }
 }
 
-export function encodeWorldSave(save: WorldSaveV2, pretty = true): string {
+export function encodeWorldSave(save: WorldSaveV3, pretty = true): string {
   return pretty ? JSON.stringify(save, null, 2) : JSON.stringify(save);
 }
 
-export function decodeWorldSave(text: string): WorldSaveV2 {
+export function decodeWorldSave(text: string): WorldSaveV3 {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -31,25 +33,43 @@ export function decodeWorldSave(text: string): WorldSaveV2 {
   return readSave(value);
 }
 
-function readSave(value: unknown): WorldSaveV2 {
+function readSave(value: unknown): WorldSaveV3 {
   const record = asRecord(value, 'The save file must contain an object.');
   if (record['format'] !== 'quiescent-chevrotain-save') {
     throw new SaveValidationError('This is not a Quiescent Chevrotain save file.');
   }
-  if (record['version'] !== 2) {
+  if (record['version'] !== 2 && record['version'] !== 3) {
     throw new SaveValidationError('This save version is not supported.');
   }
 
   return {
     format: 'quiescent-chevrotain-save',
-    version: 2,
+    version: 3,
     savedAt: readString(record, 'savedAt'),
     world: readWorld(record['world']),
     camera: readCamera(record['camera']),
     objects: readObjects(record['objects']),
     vegetation: readVegetation(record['vegetation']),
     terrain: readTerrain(record['terrain']),
+    environment:
+      record['version'] === 2
+        ? { timeOfDayMinutes: DEFAULT_TIME_OF_DAY_MINUTES }
+        : readEnvironment(record['environment']),
   };
+}
+
+function readEnvironment(value: unknown): WorldSaveV3['environment'] {
+  const record = asRecord(value, 'The save environment data is invalid.');
+  const timeOfDayMinutes = record['timeOfDayMinutes'];
+  if (
+    typeof timeOfDayMinutes !== 'number' ||
+    !Number.isInteger(timeOfDayMinutes) ||
+    timeOfDayMinutes < 0 ||
+    timeOfDayMinutes >= MINUTES_PER_DAY
+  ) {
+    throw new SaveValidationError('The saved time of day is invalid.');
+  }
+  return { timeOfDayMinutes };
 }
 
 function readWorld(value: unknown): WorldSaveV2['world'] {

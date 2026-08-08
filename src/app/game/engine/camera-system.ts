@@ -93,7 +93,7 @@ export class CameraSystem {
     this.camera.updateProjectionMatrix();
   }
 
-  update(): void {
+  update(): number {
     const now = typeof performance === 'undefined' ? this.lastUpdateTime : performance.now();
     const deltaSeconds = Math.min(Math.max((now - this.lastUpdateTime) / 1_000, 0), 0.1);
     this.lastUpdateTime = now;
@@ -101,6 +101,7 @@ export class CameraSystem {
     if (this.controls.enabled) this.moveWithKeyboard(deltaSeconds);
     this.controls.update();
     this.keepTargetInsideWorld();
+    return deltaSeconds;
   }
 
   setNavigationEnabled(enabled: boolean): void {

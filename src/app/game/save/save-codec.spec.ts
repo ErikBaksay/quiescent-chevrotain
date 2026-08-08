@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { decodeWorldSave, encodeWorldSave, SaveValidationError } from './save-codec';
-import { WorldSaveV2 } from './save.types';
+import { WorldSaveV3 } from './save.types';
 
-const save: WorldSaveV2 = {
+const save: WorldSaveV3 = {
   format: 'quiescent-chevrotain-save',
-  version: 2,
+  version: 3,
   savedAt: '2026-08-08T12:00:00.000Z',
   world: { width: 100, depth: 100, sampleSpacing: 2 },
   camera: {
@@ -36,6 +36,7 @@ const save: WorldSaveV2 = {
     heightChanges: [[12, 4.5]],
     surfaceChanges: [[20, 0, 20, 0, 0, 220, 35, 0, 0]],
   },
+  environment: { timeOfDayMinutes: 945 },
 };
 
 describe('world save codec', () => {
@@ -43,15 +44,29 @@ describe('world save codec', () => {
     expect(decodeWorldSave(encodeWorldSave(save))).toEqual(save);
   });
 
-  it('rejects unsupported versions and malformed vectors', () => {
+  it('migrates version 2 saves and rejects unsupported versions', () => {
+    const legacy = { ...save, version: 2 };
+    delete (legacy as { environment?: unknown }).environment;
+    expect(decodeWorldSave(JSON.stringify(legacy)).environment.timeOfDayMinutes).toBe(630);
     expect(() => decodeWorldSave(JSON.stringify({ ...save, version: 1 }))).toThrow(
       SaveValidationError,
     );
+  });
+
+  it('rejects malformed vectors and invalid environment times', () => {
     expect(() =>
       decodeWorldSave(
         JSON.stringify({
           ...save,
           camera: { ...save.camera, position: [0, Number.NaN, 0] },
+        }),
+      ),
+    ).toThrow(SaveValidationError);
+    expect(() =>
+      decodeWorldSave(
+        JSON.stringify({
+          ...save,
+          environment: { timeOfDayMinutes: 1_440 },
         }),
       ),
     ).toThrow(SaveValidationError);

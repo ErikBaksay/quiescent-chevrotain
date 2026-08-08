@@ -5,6 +5,8 @@
     [vegetationQuality]="vegetationQuality()"
     (editorStateChange)="editorState.set($event)"
     (worldChange)="scheduleAutoSave(world)"
+    (environmentStateChange)="environmentState.set($event)"
+    (environmentChange)="scheduleAutoSave(world)"
     (ready)="worldReadyForSaves(world)"
   ></app-game-viewport>
 
@@ -68,9 +70,79 @@
           }
         </select>
       </label>
-      <div class="environment" aria-label="Current environment: sunny">
-        <span class="environment__sun" aria-hidden="true"></span>
-        <span>Sunny</span>
+      <div class="environment-control">
+        <button
+          class="environment"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="environment-panel"
+          [attr.aria-expanded]="environmentPanelOpen()"
+          [attr.aria-label]="'Time of day: ' + timeLabel() + ', ' + phaseLabel()"
+          (click)="environmentPanelOpen.set(!environmentPanelOpen())"
+        >
+          <span
+            class="environment__sun"
+            [class.environment__sun--night]="environmentState().phase === 'night'"
+            aria-hidden="true"
+          ></span>
+          <span class="environment__time">{{ timeLabel() }}</span>
+          <small>{{ phaseLabel() }}</small>
+        </button>
+        @if (environmentPanelOpen()) {
+          <div
+            id="environment-panel"
+            class="environment-panel"
+            role="dialog"
+            aria-label="Time of day controls"
+          >
+            <div class="environment-panel__heading">
+              <span>Time of day</span>
+              <strong>{{ timeLabel() }}</strong>
+            </div>
+            <label class="environment-panel__slider">
+              <span>
+                <span>{{ phaseLabel() }}</span>
+                <output>{{ timeLabel() }}</output>
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="1439"
+                step="1"
+                [value]="environmentState().timeOfDayMinutes"
+                aria-label="Time of day"
+                (input)="setTimeOfDay($any($event.target).value, world)"
+              />
+              <span class="environment-panel__range" aria-hidden="true"
+                ><span>12 AM</span><span>12 PM</span><span>12 AM</span></span
+              >
+            </label>
+            <div class="environment-panel__actions">
+              <button
+                type="button"
+                class="environment-panel__play"
+                (click)="toggleTimePaused(world)"
+              >
+                <span aria-hidden="true">{{ environmentState().paused ? '▶' : 'Ⅱ' }}</span>
+                {{ environmentState().paused ? 'Play' : 'Pause' }}
+              </button>
+              <div class="environment-panel__speeds" aria-label="Time speed">
+                @for (scale of timeScales; track scale) {
+                  <button
+                    type="button"
+                    [class.environment-panel__speed--active]="
+                      environmentState().timeScale === scale
+                    "
+                    [attr.aria-pressed]="environmentState().timeScale === scale"
+                    (click)="setTimeScale(scale, world)"
+                  >
+                    {{ scale }}×
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
       </div>
     </div>
   </header>

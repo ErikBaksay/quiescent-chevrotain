@@ -68,4 +68,25 @@ describe('App', () => {
 
     expect(quality.value).toBe('ultra');
   });
+
+  it('exposes the time-of-day panel with playback controls', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const environment = fixture.nativeElement.querySelector('.environment') as HTMLButtonElement;
+    expect(environment.textContent).toContain('10:30 AM');
+    expect(environment.textContent).toContain('Day');
+
+    environment.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#environment-panel')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[aria-label="Time of day"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.environment-panel__play')?.textContent).toContain(
+      'Pause',
+    );
+    expect(
+      fixture.nativeElement.querySelectorAll('.environment-panel__speeds button'),
+    ).toHaveLength(3);
+  });
 });

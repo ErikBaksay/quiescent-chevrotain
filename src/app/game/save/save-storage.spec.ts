@@ -1,10 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadLocalWorldSave, saveLocalWorldSave, WORLD_SAVE_STORAGE_KEY } from './save-storage';
-import { WorldSaveV2 } from './save.types';
+import {
+  LEGACY_WORLD_SAVE_STORAGE_KEY,
+  loadLocalWorldSave,
+  saveLocalWorldSave,
+  WORLD_SAVE_STORAGE_KEY,
+} from './save-storage';
+import { WorldSaveV3 } from './save.types';
 
-const save: WorldSaveV2 = {
+const save: WorldSaveV3 = {
   format: 'quiescent-chevrotain-save',
-  version: 2,
+  version: 3,
   savedAt: '2026-08-08T12:00:00.000Z',
   world: {
     width: 100,
@@ -15,6 +20,7 @@ const save: WorldSaveV2 = {
   objects: [],
   vegetation: [],
   terrain: { heightChanges: [], surfaceChanges: [] },
+  environment: { timeOfDayMinutes: 945 },
 };
 
 describe('world save storage', () => {
@@ -40,5 +46,16 @@ describe('world save storage', () => {
         save,
       ),
     ).toThrow('quota');
+  });
+
+  it('reads and upgrades a legacy version-2 storage entry', () => {
+    const legacy = { ...save, version: 2 } as Record<string, unknown>;
+    delete legacy['environment'];
+    const getItem = vi.fn((key: string) =>
+      key === LEGACY_WORLD_SAVE_STORAGE_KEY ? JSON.stringify(legacy) : null,
+    );
+
+    expect(loadLocalWorldSave({ getItem })?.version).toBe(3);
+    expect(loadLocalWorldSave({ getItem })?.environment.timeOfDayMinutes).toBe(630);
   });
 });

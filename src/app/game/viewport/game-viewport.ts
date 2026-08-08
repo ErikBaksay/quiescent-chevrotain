@@ -14,12 +14,13 @@ import {
   signal,
 } from '@angular/core';
 import { GameEngine } from '../engine/game-engine';
+import { EnvironmentState } from '../engine/environment.types';
 import { EditorState, EditorTool } from '../editor/editor.types';
 import { AssetPlacementSelection, ResolvedAssetDefinition } from '../../assets/asset.types';
 import { VegetationQuality } from '../vegetation/vegetation-quality';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { TerrainSurfaceId } from '../world/terrain-surface.types';
-import { SaveLoadWarning, WorldSaveV2 } from '../save/save.types';
+import { SaveLoadWarning, WorldSaveV3 } from '../save/save.types';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -31,6 +32,8 @@ type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost'
 export class GameViewport implements AfterViewInit, OnDestroy {
   readonly editorStateChange = output<EditorState>();
   readonly worldChange = output<void>();
+  readonly environmentStateChange = output<EnvironmentState>();
+  readonly environmentChange = output<void>();
   readonly ready = output<void>();
   readonly vegetationQuality = input<VegetationQuality>('ultra');
 
@@ -71,6 +74,8 @@ export class GameViewport implements AfterViewInit, OnDestroy {
           onStateChange: (state) => this.state.set(state),
           onEditorStateChange: (state) => this.editorStateChange.emit(state),
           onWorldChange: () => this.worldChange.emit(),
+          onEnvironmentStateChange: (state) => this.environmentStateChange.emit(state),
+          onEnvironmentChange: () => this.environmentChange.emit(),
         });
         this.engine.setVegetationQuality(this.vegetationQuality());
         this.resizeObserver = new ResizeObserver((entries) => {
@@ -137,12 +142,24 @@ export class GameViewport implements AfterViewInit, OnDestroy {
     this.engine?.redoTerrain();
   }
 
-  createSave(): WorldSaveV2 | undefined {
+  setTimeOfDay(minutes: number): void {
+    this.engine?.setTimeOfDay(minutes);
+  }
+
+  setTimePaused(paused: boolean): void {
+    this.engine?.setTimePaused(paused);
+  }
+
+  setTimeScale(timeScale: number): void {
+    this.engine?.setTimeScale(timeScale);
+  }
+
+  createSave(): WorldSaveV3 | undefined {
     return this.engine?.createSave();
   }
 
   loadSave(
-    save: WorldSaveV2,
+    save: WorldSaveV3,
     assets: ReadonlyMap<string, ResolvedAssetDefinition>,
   ): Promise<SaveLoadWarning | undefined> {
     return (

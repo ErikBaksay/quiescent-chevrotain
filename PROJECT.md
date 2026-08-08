@@ -54,7 +54,7 @@ The first vegetation renderer now establishes that path: logical tree records ar
 
 The target is warm, believable realism or semi-realism—not a low-poly style and not a rendering technology demonstration. Priorities include attractive lighting, useful shadows, pleasant materials, vegetation, atmospheric depth, a good sky, and subtle fog.
 
-Potential environment presets are Sunny, Overcast, Golden Hour, Foggy, and Night. Stage 1 establishes a warm sunny baseline; a preset system can wait until presentation work warrants it.
+The environment now uses a fixed equinox-like time-of-day simulation with blue hour, dawn, daytime, golden hour, dusk, and night transitions. Art-directed sky palettes add cool violet upper skies, rose and apricot horizon bands, low-angle sun halos, dynamic distance fog, and long warm shadows without a post-processing or volumetric pipeline. The player can scrub or pause the clock while the renderer updates sun, moon, sky, fog, and ambient illumination. Rain, clouds, wind, precipitation, and seasonal simulation remain out of scope.
 
 ## Camera and controls
 
@@ -215,7 +215,7 @@ The approved runtime collection currently includes Civic Hall, Porch Residence, 
 
 ### Stage 6 — Presentation
 
-- Lighting, shadows, atmosphere, vegetation presentation, UI, and control polish
+- Time-of-day lighting, dynamic shadows, atmosphere, vegetation presentation, UI, and control polish
 
 ### Stage 7 and later
 

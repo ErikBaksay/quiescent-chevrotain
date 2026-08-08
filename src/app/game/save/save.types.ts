@@ -7,6 +7,10 @@ export interface SaveWorldConfig {
   readonly sampleSpacing: number;
 }
 
+export interface SaveEnvironmentState {
+  readonly timeOfDayMinutes: number;
+}
+
 export interface SaveCameraState {
   readonly position: SaveVector3;
   readonly target: SaveVector3;
@@ -59,6 +63,13 @@ export interface WorldSaveV2 {
   readonly vegetation: readonly SaveVegetationRecord[];
   readonly terrain: SaveTerrainData;
 }
+
+export interface WorldSaveV3 extends Omit<WorldSaveV2, 'version'> {
+  readonly version: 3;
+  readonly environment: SaveEnvironmentState;
+}
+
+export type WorldSave = WorldSaveV3;
 
 export interface SaveLoadWarning {
   readonly assetIds: readonly string[];

@@ -47,6 +47,7 @@ Open `http://localhost:4200`.
 - Terrain brush controls: size, strength, and falloff; `Ctrl/Cmd + Z` and `Ctrl/Cmd + Y` undo or redo terrain strokes
 - Surface painting: choose from 24 grass, earth, sand, gravel, stone, paving, asphalt, and shallow-water materials, then paint with a soft brush
 - Toolbar toggles: optional 1 m placement/movement grid and 15° rotation snapping
+- Time of day: open the top-right time control to scrub from midnight to midnight, pause the clock, or choose 0.25×, 1×, and 4× playback; the world transitions through blue hour, dramatic sunrise, golden hour, sunset, and moonlit night
 - Saves: automatic local saving/restoration plus JSON `.qcsave` export and import
 
 ## Commands

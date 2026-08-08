@@ -4,10 +4,17 @@ import { AssetCatalogService } from './assets/asset-catalog.service';
 import { ResolvedAssetDefinition } from './assets/asset.types';
 import { EditorToolbar } from './editor-toolbar/editor-toolbar';
 import { EditorState, INITIAL_EDITOR_STATE } from './game/editor/editor.types';
+import {
+  createInitialEnvironmentState,
+  environmentPhaseLabel,
+  EnvironmentState,
+  formatTimeOfDay,
+  TIME_SCALES,
+} from './game/engine/environment.types';
 import { GameViewport } from './game/viewport/game-viewport';
 import { decodeWorldSave } from './game/save/save-codec';
 import { loadLocalWorldSave, saveLocalWorldSave } from './game/save/save-storage';
-import { SaveLoadWarning, WorldSaveV2 } from './game/save/save.types';
+import { SaveLoadWarning, WorldSaveV3 } from './game/save/save.types';
 import { WORLD_CONFIG } from './game/world/world.config';
 import {
   DEFAULT_VEGETATION_QUALITY,
@@ -26,6 +33,9 @@ import {
 export class App {
   private readonly catalog = inject(AssetCatalogService);
   protected readonly editorState = signal<EditorState>(INITIAL_EDITOR_STATE);
+  protected readonly environmentState = signal<EnvironmentState>(createInitialEnvironmentState());
+  protected readonly timeScales = TIME_SCALES;
+  protected readonly environmentPanelOpen = signal(false);
   protected readonly vegetationQualities = VEGETATION_QUALITIES;
   protected readonly vegetationQuality = signal<VegetationQuality>(this.initialQuality());
   protected readonly worldWidthKilometres = WORLD_CONFIG.width / 1_000;
@@ -35,7 +45,7 @@ export class App {
   protected readonly saveMessage = signal('');
   protected readonly hasLocalSave = signal(false);
 
-  private pendingLocalSave: WorldSaveV2 | undefined;
+  private pendingLocalSave: WorldSaveV3 | undefined;
   private assetMapPromise: Promise<ReadonlyMap<string, ResolvedAssetDefinition>> | undefined;
   private autosaveTimer: ReturnType<typeof setTimeout> | undefined;
   private worldReady = false;
@@ -110,7 +120,7 @@ export class App {
   }
 
   protected async loadLocal(world: GameViewport): Promise<void> {
-    let save: WorldSaveV2 | undefined;
+    let save: WorldSaveV3 | undefined;
     try {
       save = this.readLocalSave();
     } catch (error) {
@@ -200,7 +210,7 @@ export class App {
     }
   }
 
-  private readLocalSave(): WorldSaveV2 | undefined {
+  private readLocalSave(): WorldSaveV3 | undefined {
     if (typeof localStorage === 'undefined') return undefined;
     return loadLocalWorldSave(localStorage);
   }
@@ -225,7 +235,7 @@ export class App {
     }
   }
 
-  private async applySave(save: WorldSaveV2, world: GameViewport, label: string): Promise<void> {
+  private async applySave(save: WorldSaveV3, world: GameViewport, label: string): Promise<void> {
     if (
       this.worldDirty &&
       typeof window !== 'undefined' &&
@@ -269,7 +279,29 @@ export class App {
     this.saveMessage.set(error instanceof Error ? error.message : fallback);
   }
 
-  private fileTimestamp(save: WorldSaveV2): string {
+  protected timeLabel(): string {
+    return formatTimeOfDay(this.environmentState().timeOfDayMinutes);
+  }
+
+  protected phaseLabel(): string {
+    return environmentPhaseLabel(this.environmentState().phase);
+  }
+
+  protected setTimeOfDay(value: string, world: GameViewport): void {
+    const minutes = Number(value);
+    if (!Number.isFinite(minutes)) return;
+    world.setTimeOfDay(minutes);
+  }
+
+  protected toggleTimePaused(world: GameViewport): void {
+    world.setTimePaused(!this.environmentState().paused);
+  }
+
+  protected setTimeScale(value: number, world: GameViewport): void {
+    world.setTimeScale(value);
+  }
+
+  private fileTimestamp(save: WorldSaveV3): string {
     const date = new Date(save.savedAt);
     if (Number.isNaN(date.getTime())) return 'save';
     const pad = (value: number) => value.toString().padStart(2, '0');

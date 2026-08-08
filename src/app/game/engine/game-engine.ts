@@ -9,8 +9,9 @@ import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt
 import { TerrainSurfaceId } from '../world/terrain-surface.types';
 import { CameraSystem } from './camera-system';
 import { EnvironmentSystem } from './environment-system';
+import { DEFAULT_TIME_OF_DAY_MINUTES, EnvironmentState } from './environment.types';
 import { VEGETATION_QUALITY_PROFILES, VegetationQuality } from '../vegetation/vegetation-quality';
-import { SaveLoadWarning, WorldSaveV2 } from '../save/save.types';
+import { SaveLoadWarning, WorldSaveV3 } from '../save/save.types';
 
 export type GameEngineState = 'running' | 'context-lost';
 
@@ -18,6 +19,8 @@ export interface GameEngineCallbacks {
   readonly onStateChange: (state: GameEngineState) => void;
   readonly onEditorStateChange: (state: EditorState) => void;
   readonly onWorldChange: () => void;
+  readonly onEnvironmentStateChange: (state: EnvironmentState) => void;
+  readonly onEnvironmentChange: () => void;
 }
 
 /** Coordinates the Three.js lifecycle without exposing scene objects to Angular. */
@@ -35,6 +38,7 @@ export class GameEngine {
   private height = 1;
   private vegetationQuality: VegetationQuality = 'ultra';
   private loadingSave = false;
+  private environmentUiElapsed = 0;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -132,11 +136,29 @@ export class GameEngine {
     this.editorSystem.redoTerrain();
   }
 
-  createSave(): WorldSaveV2 {
+  setTimeOfDay(minutes: number): void {
+    this.environmentSystem.setTimeOfDay(minutes);
+    this.notifyEnvironmentState();
+    if (!this.loadingSave) this.callbacks.onEnvironmentChange();
+  }
+
+  setTimePaused(paused: boolean): void {
+    if (this.environmentSystem.getState().paused === paused) return;
+    this.environmentSystem.setPaused(paused);
+    this.notifyEnvironmentState();
+    if (!this.loadingSave) this.callbacks.onEnvironmentChange();
+  }
+
+  setTimeScale(timeScale: number): void {
+    this.environmentSystem.setTimeScale(timeScale);
+    this.notifyEnvironmentState();
+  }
+
+  createSave(): WorldSaveV3 {
     const editor = this.editorSystem.createSaveData();
     return {
       format: 'quiescent-chevrotain-save',
-      version: 2,
+      version: 3,
       savedAt: new Date().toISOString(),
       world: {
         width: WORLD_CONFIG.width,
@@ -147,11 +169,14 @@ export class GameEngine {
       objects: editor.objects,
       vegetation: editor.vegetation,
       terrain: editor.terrain,
+      environment: {
+        timeOfDayMinutes: Math.floor(this.environmentSystem.getState().timeOfDayMinutes),
+      },
     };
   }
 
   async loadSave(
-    save: WorldSaveV2,
+    save: WorldSaveV3,
     assets: ReadonlyMap<string, ResolvedAssetDefinition>,
   ): Promise<SaveLoadWarning | undefined> {
     if (
@@ -166,6 +191,8 @@ export class GameEngine {
     try {
       const warning = await this.editorSystem.loadSaveData(save, assets);
       this.cameraSystem.loadSaveState(save.camera);
+      this.environmentSystem.setTimeOfDay(save.environment.timeOfDayMinutes);
+      this.notifyEnvironmentState();
       return warning;
     } finally {
       this.loadingSave = false;
@@ -176,7 +203,7 @@ export class GameEngine {
     await this.loadSave(
       {
         format: 'quiescent-chevrotain-save',
-        version: 2,
+        version: 3,
         savedAt: new Date().toISOString(),
         world: {
           width: WORLD_CONFIG.width,
@@ -190,6 +217,7 @@ export class GameEngine {
         objects: [],
         vegetation: [],
         terrain: { heightChanges: [], surfaceChanges: [] },
+        environment: { timeOfDayMinutes: DEFAULT_TIME_OF_DAY_MINUTES },
       },
       new Map(),
     );
@@ -223,9 +251,14 @@ export class GameEngine {
   }
 
   private readonly renderFrame = (): void => {
-    this.cameraSystem.update();
+    const deltaSeconds = this.cameraSystem.update();
     this.editorSystem.update();
-    this.environmentSystem.update(this.cameraSystem.camera);
+    this.environmentSystem.update(this.cameraSystem.camera, deltaSeconds);
+    this.environmentUiElapsed += deltaSeconds;
+    if (this.environmentUiElapsed >= 0.25) {
+      this.environmentUiElapsed = 0;
+      this.notifyEnvironmentState();
+    }
     this.renderer.render(this.scene, this.cameraSystem.camera);
     this.animationFrameId = requestAnimationFrame(this.renderFrame);
   };
@@ -251,5 +284,9 @@ export class GameEngine {
     const maximum = VEGETATION_QUALITY_PROFILES[this.vegetationQuality].pixelRatio;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maximum));
     this.renderer.setSize(this.width, this.height, false);
+  }
+
+  private notifyEnvironmentState(): void {
+    this.callbacks.onEnvironmentStateChange(this.environmentSystem.getState());
   }
 }
