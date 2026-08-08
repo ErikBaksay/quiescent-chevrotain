@@ -75,3 +75,13 @@ PROJECT.md       # Long-term product and architecture source of truth
 ```
 
 See [PROJECT.md](PROJECT.md) for the vision, constraints, architecture, and roadmap.
+
+## Deployment
+
+Pushes to `main` are built and deployed to GitHub Pages by
+[the Pages workflow](.github/workflows/deploy-pages.yml). The workflow can also be run manually
+from the repository's **Actions** tab.
+
+For the first deployment, set **Settings → Pages → Build and deployment → Source** to
+**GitHub Actions**. The game will then be published at
+`https://erikbaksay.github.io/quiescent-chevrotain/`.
