@@ -48,6 +48,135 @@
   pointer-events: auto;
 }
 
+.save-control {
+  position: relative;
+}
+
+.save-control__button {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.08rem 0.42rem;
+  min-width: 5.7rem;
+  padding: 0.42rem 0.72rem 0.42rem 0.5rem;
+  color: #263b2e;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(246, 244, 222, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.19);
+  border-radius: 2rem;
+  box-shadow: 0 0.75rem 2rem rgba(17, 28, 22, 0.13);
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 253, 233, 0.92);
+    outline: none;
+  }
+
+  small {
+    grid-column: 2;
+    color: rgba(38, 59, 46, 0.58);
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.save-control__icon {
+  grid-row: 1 / 3;
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  color: #f6f2df;
+  font-size: 1rem;
+  line-height: 1;
+  background: #314a38;
+  border-radius: 50%;
+}
+
+.save-panel {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  display: grid;
+  gap: 0.42rem;
+  width: 12rem;
+  padding: 0.72rem;
+  color: #263b2e;
+  background: rgba(246, 244, 222, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 0.8rem;
+  box-shadow: 0 1rem 2.5rem rgba(17, 28, 22, 0.2);
+  backdrop-filter: blur(1rem) saturate(120%);
+
+  strong {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  button,
+  .save-panel__import {
+    padding: 0.44rem 0.5rem;
+    color: #314a38;
+    font: inherit;
+    font-size: 0.65rem;
+    font-weight: 750;
+    text-align: left;
+    cursor: pointer;
+    background: rgba(49, 74, 56, 0.08);
+    border: 1px solid rgba(49, 74, 56, 0.12);
+    border-radius: 0.42rem;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(49, 74, 56, 0.16);
+      outline: none;
+    }
+
+    &:disabled {
+      color: rgba(38, 59, 46, 0.35);
+      cursor: not-allowed;
+    }
+  }
+}
+
+.save-panel__status {
+  min-height: 1.2rem;
+  color: rgba(38, 59, 46, 0.64);
+  font-size: 0.58rem;
+  line-height: 1.35;
+}
+
+.save-panel__reset {
+  color: #8d493c !important;
+  background: rgba(141, 73, 60, 0.08) !important;
+  border-color: rgba(141, 73, 60, 0.16) !important;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(141, 73, 60, 0.16) !important;
+  }
+}
+
+.save-panel__import {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
 .quality-setting {
   display: flex;
   gap: 0.45rem;

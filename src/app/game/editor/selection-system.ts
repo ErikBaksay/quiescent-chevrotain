@@ -1,5 +1,6 @@
 import { BoxHelper, Group, Object3D, PerspectiveCamera, Raycaster, Scene, Vector2 } from 'three';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { SaveObjectRecord } from '../save/save.types';
 
 const PLACEABLE_ROOT_KEY = 'quiescentChevrotainPlaceableRoot';
 
@@ -35,6 +36,22 @@ export class SelectionSystem {
 
   get objectCount(): number {
     return this.objectsRoot.children.length;
+  }
+
+  createSaveRecords(): readonly SaveObjectRecord[] {
+    return this.objectsRoot.children.flatMap((object) => {
+      const assetId = object.userData['assetId'];
+      if (typeof assetId !== 'string' || assetId.length === 0) return [];
+      return [
+        {
+          assetId,
+          position: object.position.toArray() as [number, number, number],
+          quaternion: object.quaternion.toArray() as [number, number, number, number],
+          scale: object.scale.toArray() as [number, number, number],
+          materialOverrides: {},
+        },
+      ];
+    });
   }
 
   register(object: Object3D): Object3D {
@@ -101,6 +118,11 @@ export class SelectionSystem {
     removed.removeFromParent();
     this.select(undefined);
     return removed;
+  }
+
+  clearObjects(): void {
+    this.select(undefined);
+    this.objectsRoot.clear();
   }
 
   update(): void {

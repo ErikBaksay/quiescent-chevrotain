@@ -19,6 +19,7 @@ import {
   TERRAIN_SURFACE_LAYER_COUNT,
   TerrainSurfaceLayers,
 } from './terrain-surface.types';
+import { SaveTerrainData } from '../save/save.types';
 import {
   createFallbackTerrainSurfaceTextures,
   createTerrainSurfaceMaterial,
@@ -91,6 +92,87 @@ export class TerrainSystem {
 
   get heightData(): Float32Array {
     return this.heights;
+  }
+
+  createSaveData(): SaveTerrainData {
+    const heightChanges: Array<readonly [number, number]> = [];
+    const surfaceChanges: Array<
+      readonly [number, number, number, number, number, number, number, number, number]
+    > = [];
+    const defaultSurfaceId = TERRAIN_SURFACE_INDEX[DEFAULT_TERRAIN_SURFACE];
+
+    for (let index = 0; index < this.heights.length; index += 1) {
+      const height = this.heights[index];
+      if (Math.abs(height - this.config.terrain.baseHeight) > 0.00001) {
+        heightChanges.push([index, height]);
+      }
+
+      const offset = index * TERRAIN_SURFACE_LAYER_COUNT;
+      const isDefaultSurface =
+        this.surfaceIds[offset] === defaultSurfaceId &&
+        this.surfaceIds[offset + 1] === defaultSurfaceId &&
+        this.surfaceIds[offset + 2] === defaultSurfaceId &&
+        this.surfaceIds[offset + 3] === defaultSurfaceId &&
+        this.surfaceWeights[offset] === 255 &&
+        this.surfaceWeights[offset + 1] === 0 &&
+        this.surfaceWeights[offset + 2] === 0 &&
+        this.surfaceWeights[offset + 3] === 0;
+      if (!isDefaultSurface) {
+        surfaceChanges.push([
+          index,
+          this.surfaceIds[offset],
+          this.surfaceIds[offset + 1],
+          this.surfaceIds[offset + 2],
+          this.surfaceIds[offset + 3],
+          this.surfaceWeights[offset],
+          this.surfaceWeights[offset + 1],
+          this.surfaceWeights[offset + 2],
+          this.surfaceWeights[offset + 3],
+        ]);
+      }
+    }
+
+    return { heightChanges, surfaceChanges };
+  }
+
+  loadSaveData(data: SaveTerrainData): void {
+    const defaultSurfaceId = TERRAIN_SURFACE_INDEX[DEFAULT_TERRAIN_SURFACE];
+    this.heights.fill(this.config.terrain.baseHeight);
+    this.surfaceIds.fill(defaultSurfaceId);
+    this.surfaceWeights.fill(0);
+    for (let index = 0; index < this.heights.length; index += 1) {
+      this.surfaceWeights[index * TERRAIN_SURFACE_LAYER_COUNT] = 255;
+    }
+
+    for (const [index, height] of data.heightChanges) {
+      if (!Number.isInteger(index) || index < 0 || index >= this.heights.length) continue;
+      this.heights[index] = Math.min(this.maxHeight, Math.max(this.minHeight, height));
+    }
+    for (const [
+      index,
+      id0,
+      id1,
+      id2,
+      id3,
+      weight0,
+      weight1,
+      weight2,
+      weight3,
+    ] of data.surfaceChanges) {
+      if (!Number.isInteger(index) || index < 0 || index >= this.heights.length) continue;
+      const offset = index * TERRAIN_SURFACE_LAYER_COUNT;
+      this.surfaceIds[offset] = Math.max(0, Math.min(255, id0));
+      this.surfaceIds[offset + 1] = Math.max(0, Math.min(255, id1));
+      this.surfaceIds[offset + 2] = Math.max(0, Math.min(255, id2));
+      this.surfaceIds[offset + 3] = Math.max(0, Math.min(255, id3));
+      this.surfaceWeights[offset] = Math.max(0, Math.min(255, weight0));
+      this.surfaceWeights[offset + 1] = Math.max(0, Math.min(255, weight1));
+      this.surfaceWeights[offset + 2] = Math.max(0, Math.min(255, weight2));
+      this.surfaceWeights[offset + 3] = Math.max(0, Math.min(255, weight3));
+    }
+
+    this.updateRegion(0, this.sampleCountX - 1, 0, this.sampleCountZ - 1);
+    this.updateSurfaceRegion(0, this.sampleCountX - 1, 0, this.sampleCountZ - 1);
   }
 
   get tileCount(): number {

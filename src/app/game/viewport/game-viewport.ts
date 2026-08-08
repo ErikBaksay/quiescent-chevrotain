@@ -19,6 +19,7 @@ import { ResolvedAssetDefinition } from '../../assets/asset.types';
 import { VegetationQuality } from '../vegetation/vegetation-quality';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { TerrainSurfaceId } from '../world/terrain-surface.types';
+import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -29,6 +30,8 @@ type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost'
 })
 export class GameViewport implements AfterViewInit, OnDestroy {
   readonly editorStateChange = output<EditorState>();
+  readonly worldChange = output<void>();
+  readonly ready = output<void>();
   readonly vegetationQuality = input<VegetationQuality>('ultra');
 
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -67,6 +70,7 @@ export class GameViewport implements AfterViewInit, OnDestroy {
         this.engine = new GameEngine(canvas, {
           onStateChange: (state) => this.state.set(state),
           onEditorStateChange: (state) => this.editorStateChange.emit(state),
+          onWorldChange: () => this.worldChange.emit(),
         });
         this.engine.setVegetationQuality(this.vegetationQuality());
         this.resizeObserver = new ResizeObserver((entries) => {
@@ -80,6 +84,7 @@ export class GameViewport implements AfterViewInit, OnDestroy {
         const bounds = viewport.getBoundingClientRect();
         this.engine.resize(bounds.width, bounds.height);
         this.engine.start();
+        this.ready.emit();
       } catch (error) {
         console.error('Unable to initialize the Three.js world.', error);
         this.state.set('error');
@@ -130,6 +135,23 @@ export class GameViewport implements AfterViewInit, OnDestroy {
 
   redoTerrain(): void {
     this.engine?.redoTerrain();
+  }
+
+  createSave(): WorldSaveV1 | undefined {
+    return this.engine?.createSave();
+  }
+
+  loadSave(
+    save: WorldSaveV1,
+    assets: ReadonlyMap<string, ResolvedAssetDefinition>,
+  ): Promise<SaveLoadWarning | undefined> {
+    return (
+      this.engine?.loadSave(save, assets) ?? Promise.reject(new Error('The world is not ready.'))
+    );
+  }
+
+  resetWorld(): Promise<void> {
+    return this.engine?.resetWorld() ?? Promise.reject(new Error('The world is not ready.'));
   }
 
   deleteSelected(): void {

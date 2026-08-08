@@ -30,6 +30,7 @@ import {
   VegetationQuality,
   VegetationQualityProfile,
 } from './vegetation-quality';
+import { SaveVegetationRecord } from '../save/save.types';
 
 type VegetationLod = 'lod0' | 'lod1' | 'impostor';
 
@@ -130,6 +131,17 @@ export class VegetationSystem {
     return this.selectedId;
   }
 
+  createSaveRecords(): readonly SaveVegetationRecord[] {
+    return Array.from(this.records.values()).map((record) => ({
+      assetId: record.asset.id,
+      position: record.position.toArray() as [number, number, number],
+      quaternion: record.quaternion.toArray() as [number, number, number, number],
+      scale: record.scale.toArray() as [number, number, number],
+      variantIndex: record.variantIndex,
+      tint: record.tint.toArray() as [number, number, number],
+    }));
+  }
+
   setQuality(quality: VegetationQuality): void {
     this.quality = quality;
     const farFrameDistance = VEGETATION_QUALITY_PROFILES[quality].impostorDistance;
@@ -164,6 +176,28 @@ export class VegetationSystem {
     return id;
   }
 
+  async addSaved(
+    record: SaveVegetationRecord,
+    asset: ResolvedVegetationAssetDefinition,
+  ): Promise<string> {
+    await this.ensureSpecies(asset);
+    const id = `tree-${++this.sequence}`;
+    const tree: TreeRecord = {
+      id,
+      asset,
+      variantIndex: record.variantIndex % asset.vegetation.variants.length,
+      position: new Vector3().fromArray(record.position),
+      quaternion: new Quaternion().fromArray(record.quaternion),
+      scale: new Vector3().fromArray(record.scale),
+      tint: new Color().fromArray(record.tint),
+      lod: undefined,
+    };
+    this.records.set(id, tree);
+    this.indexRecord(tree);
+    this.dirty = true;
+    return id;
+  }
+
   async duplicateSelected(): Promise<string | undefined> {
     const selected = this.selectedId ? this.records.get(this.selectedId) : undefined;
     if (!selected) return undefined;
@@ -189,6 +223,14 @@ export class VegetationSystem {
     this.select(undefined);
     this.dirty = true;
     return id;
+  }
+
+  clearRecords(): void {
+    this.select(undefined);
+    this.records.clear();
+    this.cells.clear();
+    this.recordCells.clear();
+    this.dirty = true;
   }
 
   select(id: string | undefined): void {

@@ -27,9 +27,23 @@ describe('App', () => {
 
     expect(compiled.querySelector('.brand strong')?.textContent).toContain('Quiescent Chevrotain');
     expect(compiled.querySelector('.stage-card')?.textContent).toContain('Stage 3');
+    expect(compiled.querySelector('[aria-label="World saves"]')).toBeFalsy();
+    expect(compiled.querySelector('.save-control__button')?.textContent).toContain('Saves');
     expect(compiled.querySelector('[aria-label="World editor tools"]')).toBeTruthy();
     expect(compiled.querySelector('[aria-label="Asset catalogue"]')).toBeTruthy();
     expect(compiled.querySelector('canvas')?.getAttribute('aria-label')).toContain('3D world');
+  });
+
+  it('exposes reset world inside the Saves menu', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('.save-control__button')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.save-panel__reset')?.textContent).toContain(
+      'Reset world',
+    );
   });
 
   it('selects Ultra when no quality has been persisted', () => {

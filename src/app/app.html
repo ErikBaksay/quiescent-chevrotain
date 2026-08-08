@@ -4,6 +4,8 @@
     class="world"
     [vegetationQuality]="vegetationQuality()"
     (editorStateChange)="editorState.set($event)"
+    (worldChange)="scheduleAutoSave(world)"
+    (ready)="worldReadyForSaves(world)"
   ></app-game-viewport>
 
   <header class="topbar">
@@ -22,6 +24,41 @@
     </div>
 
     <div class="topbar__settings">
+      <div class="save-control">
+        <button
+          class="save-control__button"
+          type="button"
+          aria-haspopup="true"
+          [attr.aria-expanded]="savePanelOpen()"
+          (click)="savePanelOpen.set(!savePanelOpen())"
+        >
+          <span class="save-control__icon" aria-hidden="true">↓</span>
+          <span>Saves</span>
+          <small>{{ saveStatusLabel() }}</small>
+        </button>
+        @if (savePanelOpen()) {
+          <div class="save-panel" role="dialog" aria-label="World saves">
+            <strong>World saves</strong>
+            <span class="save-panel__status" aria-live="polite">{{ saveMessage() }}</span>
+            <button type="button" (click)="saveNow(world)">Save now</button>
+            <button type="button" [disabled]="!hasLocalSave()" (click)="loadLocal(world)">
+              Load local save
+            </button>
+            <button type="button" (click)="exportSave(world)">Export save</button>
+            <label class="save-panel__import">
+              Import save
+              <input
+                type="file"
+                accept=".qcsave,application/json"
+                (change)="importSave($event, world)"
+              />
+            </label>
+            <button class="save-panel__reset" type="button" (click)="resetWorld(world)">
+              Reset world
+            </button>
+          </div>
+        }
+      </div>
       <label class="quality-setting">
         <span>Quality</span>
         <select

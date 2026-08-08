@@ -1,6 +1,7 @@
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WorldConfig } from '../world/world.config';
+import { SaveCameraState } from '../save/save.types';
 
 /** Owns the editor camera and management-game-style navigation. */
 export class CameraSystem {
@@ -11,7 +12,11 @@ export class CameraSystem {
   private readonly targetBoundaryZ: number;
   private readonly clampedTarget = new Vector3();
 
-  constructor(canvas: HTMLCanvasElement, config: WorldConfig) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    config: WorldConfig,
+    private readonly onChange: () => void = () => {},
+  ) {
     this.camera = new PerspectiveCamera(45, 1, config.camera.near, config.camera.far);
     this.camera.position.fromArray(config.camera.initialPosition);
 
@@ -36,6 +41,21 @@ export class CameraSystem {
     const edgePadding = 40;
     this.targetBoundaryX = config.width / 2 - edgePadding;
     this.targetBoundaryZ = config.depth / 2 - edgePadding;
+    this.controls.addEventListener('change', this.handleChange);
+  }
+
+  createSaveState(): SaveCameraState {
+    return {
+      position: this.camera.position.toArray() as [number, number, number],
+      target: this.controls.target.toArray() as [number, number, number],
+    };
+  }
+
+  loadSaveState(state: SaveCameraState): void {
+    this.camera.position.fromArray(state.position);
+    this.controls.target.fromArray(state.target);
+    this.keepTargetInsideWorld();
+    this.controls.update();
   }
 
   resize(width: number, height: number): void {
@@ -53,8 +73,13 @@ export class CameraSystem {
   }
 
   dispose(): void {
+    this.controls.removeEventListener('change', this.handleChange);
     this.controls.dispose();
   }
+
+  private readonly handleChange = (): void => {
+    this.onChange();
+  };
 
   private keepTargetInsideWorld(): void {
     this.clampedTarget.set(

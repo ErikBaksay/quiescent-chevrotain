@@ -11,8 +11,19 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AssetCatalogService {
   private readonly document = inject(DOCUMENT);
+  private readonly cache = new Map<string, Promise<readonly ResolvedAssetDefinition[]>>();
 
   async load(catalogPath = 'assets/catalog.json'): Promise<readonly ResolvedAssetDefinition[]> {
+    const cached = this.cache.get(catalogPath);
+    if (cached) return cached;
+
+    const loading = this.loadUncached(catalogPath);
+    this.cache.set(catalogPath, loading);
+    loading.catch(() => this.cache.delete(catalogPath));
+    return loading;
+  }
+
+  private async loadUncached(catalogPath: string): Promise<readonly ResolvedAssetDefinition[]> {
     const catalogUrl = new URL(catalogPath, this.document.baseURI).href;
     const catalog = await this.fetchJson<AssetCatalog>(catalogUrl);
     if (catalog.version !== 1 || !Array.isArray(catalog.manifests)) {

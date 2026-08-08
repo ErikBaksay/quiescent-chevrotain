@@ -12,7 +12,7 @@ The project is implementing **Stage 3: Southern Heritage Collection and Real Ass
 - SCSS
 - Vitest
 
-There is no runtime backend. The game is intended to remain statically hostable, including on GitHub Pages, with browser-local persistence added in a later stage.
+There is no runtime backend. The game is intended to remain statically hostable, including on GitHub Pages, with browser-local persistence and portable JSON saves.
 
 ## Requirements
 
@@ -45,6 +45,7 @@ Open `http://localhost:4200`.
 - Terrain brush controls: size, strength, and falloff; `Ctrl/Cmd + Z` and `Ctrl/Cmd + Y` undo or redo terrain strokes
 - Surface painting: choose from 24 grass, earth, sand, gravel, stone, paving, asphalt, and shallow-water materials, then paint with a soft brush
 - Toolbar toggles: optional 1 m placement/movement grid and 15° rotation snapping
+- Saves: automatic local saving/restoration plus JSON `.qcsave` export and import
 
 ## Commands
 

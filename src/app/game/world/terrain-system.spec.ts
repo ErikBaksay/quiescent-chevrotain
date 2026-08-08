@@ -66,4 +66,31 @@ describe('TerrainSystem', () => {
     expect(firstPosition.getY(0)).not.toBe(original);
     terrain.dispose();
   });
+
+  it('round-trips sparse sculpt and surface data while resetting old edits', () => {
+    const terrain = new TerrainSystem(config);
+    terrain.setHeightAtSample(10, 12, 18);
+    const editedIndex = terrain.sampleIndex(10, 12);
+    terrain.setSurfaceLayers(editedIndex, {
+      ids: [0, 20, 0, 0],
+      weights: [180, 75, 0, 0],
+    });
+    const save = terrain.createSaveData();
+
+    terrain.setHeightAtSample(10, 12, -12);
+    terrain.loadSaveData(save);
+    expect(terrain.getHeightAtSample(10, 12)).toBe(18);
+    expect(terrain.getSurfaceLayers(editedIndex)).toEqual({
+      ids: [0, 20, 0, 0],
+      weights: [180, 75, 0, 0],
+    });
+
+    terrain.loadSaveData({ heightChanges: [], surfaceChanges: [] });
+    expect(terrain.getHeightAtSample(10, 12)).toBe(0);
+    expect(terrain.getSurfaceLayers(editedIndex)).toEqual({
+      ids: [0, 0, 0, 0],
+      weights: [255, 0, 0, 0],
+    });
+    terrain.dispose();
+  });
 });

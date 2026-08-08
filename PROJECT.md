@@ -34,8 +34,8 @@ First-person exploration may be considered later but is outside the initial deve
 - **Application:** Angular, Three.js, TypeScript, and SCSS.
 - **Platform:** Browser first, desktop-oriented editor controls initially.
 - **Hosting:** Static output suitable for GitHub Pages; no Node server at runtime.
-- **Persistence:** Browser-local storage, with IndexedDB preferred as worlds grow.
-- **Portability:** Explicit world export/import will eventually complement local saves.
+- **Persistence:** Versioned browser-local world saves with JSON export/import; IndexedDB remains a future option as worlds grow.
+- **Portability:** Explicit world export/import complements local saves.
 - **PWA:** Optional later enhancement, not a foundation requirement.
 
 Angular owns the application shell, menus, toolbar, asset browser, settings, panels, and UI state. Three.js owns rendering, the scene, camera, terrain, world objects, raycasting, placement, transforms, and environment. Three.js scene objects should not become Angular components.
@@ -141,7 +141,7 @@ Do not serialize Three.js object graphs. Save logical data and reconstruct rende
 }
 ```
 
-Versioning belongs in the save envelope from the first persistence implementation so migrations remain possible. Terrain and surface data will need a compact representation designed when those systems exist.
+Versioning belongs in the save envelope from the first persistence implementation so migrations remain possible. Terrain and surface data use sparse changes relative to the default world.
 
 ## Architecture direction
 
@@ -202,7 +202,7 @@ The collection spans 1820–1910 with maintained historical patina. The approved
 ### Stage 4 — Editor robustness
 
 - Undo/redo and improved selection
-- IndexedDB save/load plus explicit export/import
+- Versioned localStorage save/load plus explicit JSON export/import
 - Properties panel and material customization
 
 ### Stage 5 — Terrain

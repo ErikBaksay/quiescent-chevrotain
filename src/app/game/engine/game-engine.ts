@@ -10,12 +10,14 @@ import { TerrainSurfaceId } from '../world/terrain-surface.types';
 import { CameraSystem } from './camera-system';
 import { EnvironmentSystem } from './environment-system';
 import { VEGETATION_QUALITY_PROFILES, VegetationQuality } from '../vegetation/vegetation-quality';
+import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
 
 export type GameEngineState = 'running' | 'context-lost';
 
 export interface GameEngineCallbacks {
   readonly onStateChange: (state: GameEngineState) => void;
   readonly onEditorStateChange: (state: EditorState) => void;
+  readonly onWorldChange: () => void;
 }
 
 /** Coordinates the Three.js lifecycle without exposing scene objects to Angular. */
@@ -32,6 +34,7 @@ export class GameEngine {
   private width = 1;
   private height = 1;
   private vegetationQuality: VegetationQuality = 'ultra';
+  private loadingSave = false;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -48,7 +51,9 @@ export class GameEngine {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
-    this.cameraSystem = new CameraSystem(canvas, WORLD_CONFIG);
+    this.cameraSystem = new CameraSystem(canvas, WORLD_CONFIG, () => {
+      if (!this.loadingSave) callbacks.onWorldChange();
+    });
     this.environmentSystem = new EnvironmentSystem(this.scene);
     this.worldSystem = new WorldSystem(this.scene, WORLD_CONFIG);
     this.editorSystem = new EditorSystem(
@@ -60,6 +65,9 @@ export class GameEngine {
       callbacks.onEditorStateChange,
       (enabled) => this.cameraSystem.setNavigationEnabled(enabled),
       this.worldSystem.terrainSystem,
+      () => {
+        if (!this.loadingSave) callbacks.onWorldChange();
+      },
     );
     void this.worldSystem.terrainSystem.loadSurfaceTextures(
       this.renderer.capabilities.getMaxAnisotropy(),
@@ -122,6 +130,69 @@ export class GameEngine {
 
   redoTerrain(): void {
     this.editorSystem.redoTerrain();
+  }
+
+  createSave(): WorldSaveV1 {
+    const editor = this.editorSystem.createSaveData();
+    return {
+      format: 'quiescent-chevrotain-save',
+      version: 1,
+      savedAt: new Date().toISOString(),
+      world: {
+        width: WORLD_CONFIG.width,
+        depth: WORLD_CONFIG.depth,
+        sampleSpacing: WORLD_CONFIG.terrain.sampleSpacing,
+      },
+      camera: this.cameraSystem.createSaveState(),
+      objects: editor.objects,
+      vegetation: editor.vegetation,
+      terrain: editor.terrain,
+    };
+  }
+
+  async loadSave(
+    save: WorldSaveV1,
+    assets: ReadonlyMap<string, ResolvedAssetDefinition>,
+  ): Promise<SaveLoadWarning | undefined> {
+    if (
+      save.world.width !== WORLD_CONFIG.width ||
+      save.world.depth !== WORLD_CONFIG.depth ||
+      save.world.sampleSpacing !== WORLD_CONFIG.terrain.sampleSpacing
+    ) {
+      throw new Error('This save uses a different world size or terrain resolution.');
+    }
+
+    this.loadingSave = true;
+    try {
+      const warning = await this.editorSystem.loadSaveData(save, assets);
+      this.cameraSystem.loadSaveState(save.camera);
+      return warning;
+    } finally {
+      this.loadingSave = false;
+    }
+  }
+
+  async resetWorld(): Promise<void> {
+    await this.loadSave(
+      {
+        format: 'quiescent-chevrotain-save',
+        version: 1,
+        savedAt: new Date().toISOString(),
+        world: {
+          width: WORLD_CONFIG.width,
+          depth: WORLD_CONFIG.depth,
+          sampleSpacing: WORLD_CONFIG.terrain.sampleSpacing,
+        },
+        camera: {
+          position: WORLD_CONFIG.camera.initialPosition,
+          target: WORLD_CONFIG.camera.initialTarget,
+        },
+        objects: [],
+        vegetation: [],
+        terrain: { heightChanges: [], surfaceChanges: [] },
+      },
+      new Map(),
+    );
   }
 
   resize(width: number, height: number): void {

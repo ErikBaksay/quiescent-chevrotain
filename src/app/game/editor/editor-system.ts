@@ -1,5 +1,5 @@
 import { Object3D, PerspectiveCamera, Scene, Vector2 } from 'three';
-import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { ResolvedAssetDefinition, isVegetationAsset } from '../../assets/asset.types';
 import { AssetManager } from '../assets/asset-manager';
 import { EditorState, EditorTool, INITIAL_EDITOR_STATE } from './editor.types';
 import { PlacementSystem } from './placement-system';
@@ -13,6 +13,7 @@ import { TerrainPaintSystem } from '../world/terrain-paint-system';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { DEFAULT_TERRAIN_SURFACE, TerrainSurfaceId } from '../world/terrain-surface.types';
 import { TerrainSculptSystem } from '../world/terrain-sculpt-system';
+import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
 
 interface PointerStart {
   readonly id: number;
@@ -44,10 +45,11 @@ export class EditorSystem {
     private readonly camera: PerspectiveCamera,
     private readonly canvas: HTMLCanvasElement,
     terrain: Object3D,
-    assets: AssetManager,
+    private readonly assets: AssetManager,
     private readonly onStateChange: (state: EditorState) => void,
     private readonly setCameraNavigationEnabled: (enabled: boolean) => void,
-    terrainSystem?: TerrainSystem,
+    private readonly terrainSystem?: TerrainSystem,
+    private readonly onWorldChange: () => void = () => {},
   ) {
     this.placementSystem = new PlacementSystem(scene, terrain, assets, () => this.emitState());
     this.selectionSystem = new SelectionSystem(scene);
@@ -63,7 +65,10 @@ export class EditorSystem {
       scene,
       camera,
       canvas,
-      (dragging) => this.setCameraNavigationEnabled(!dragging),
+      (dragging) => {
+        this.setCameraNavigationEnabled(!dragging);
+        if (!dragging) this.onWorldChange();
+      },
       () => {
         this.selectionSystem.update();
         this.vegetationSystem.syncSelectedProxy();
@@ -95,6 +100,90 @@ export class EditorSystem {
       paintBrush: this.terrainPaintSystem?.brushSettings ?? INITIAL_EDITOR_STATE.paintBrush,
       canUndoTerrain: this.terrainHistory?.canUndo ?? false,
       canRedoTerrain: this.terrainHistory?.canRedo ?? false,
+    };
+  }
+
+  createSaveData(): Pick<WorldSaveV1, 'objects' | 'vegetation' | 'terrain'> {
+    return {
+      objects: this.selectionSystem.createSaveRecords(),
+      vegetation: this.vegetationSystem.createSaveRecords(),
+      terrain: this.terrainSystem?.createSaveData() ?? {
+        heightChanges: [],
+        surfaceChanges: [],
+      },
+    };
+  }
+
+  async loadSaveData(
+    save: Pick<WorldSaveV1, 'objects' | 'vegetation' | 'terrain'>,
+    assets: ReadonlyMap<string, ResolvedAssetDefinition>,
+  ): Promise<SaveLoadWarning | undefined> {
+    const skippedAssetIds = new Set<string>();
+    const availableAssets = new Map<string, ResolvedAssetDefinition>();
+    const referencedAssetIds = new Set([
+      ...save.objects.map((record) => record.assetId),
+      ...save.vegetation.map((record) => record.assetId),
+    ]);
+    for (const assetId of referencedAssetIds) {
+      const asset = assets.get(assetId);
+      if (!asset) {
+        skippedAssetIds.add(assetId);
+        continue;
+      }
+      try {
+        await this.assets.load(asset);
+        availableAssets.set(assetId, asset);
+      } catch {
+        skippedAssetIds.add(assetId);
+      }
+    }
+
+    this.stopTerrainStroke(false);
+    this.placementSystem.cancel();
+    this.transformSystem.detach();
+    this.selectionSystem.clearObjects();
+    this.vegetationSystem.clearRecords();
+    this.terrainHistory?.clear();
+    this.activeTool = 'select';
+    this.canvas.style.cursor = '';
+
+    for (const record of save.objects) {
+      const asset = availableAssets.get(record.assetId);
+      if (!asset || isVegetationAsset(asset)) {
+        skippedAssetIds.add(record.assetId);
+        continue;
+      }
+      try {
+        const object = await this.createSavedObject(record, asset);
+        this.selectionSystem.register(object);
+      } catch {
+        skippedAssetIds.add(record.assetId);
+      }
+    }
+    for (const record of save.vegetation) {
+      const asset = availableAssets.get(record.assetId);
+      if (!asset || !isVegetationAsset(asset)) {
+        skippedAssetIds.add(record.assetId);
+        continue;
+      }
+      try {
+        await this.vegetationSystem.addSaved(record, asset);
+      } catch {
+        skippedAssetIds.add(record.assetId);
+      }
+    }
+    this.terrainSystem?.loadSaveData(save.terrain);
+    this.clearSelection();
+
+    if (skippedAssetIds.size === 0) {
+      this.emitState();
+      return undefined;
+    }
+    const assetIds = Array.from(skippedAssetIds).sort();
+    this.emitState();
+    return {
+      assetIds,
+      message: `Skipped ${assetIds.length} unavailable asset${assetIds.length === 1 ? '' : 's'}: ${assetIds.join(', ')}`,
     };
   }
 
@@ -174,12 +263,18 @@ export class EditorSystem {
 
   undoTerrain(): void {
     if (this.transformSystem.isDragging || this.terrainPointerId !== undefined) return;
-    if (this.terrainHistory?.undo()) this.emitState();
+    if (this.terrainHistory?.undo()) {
+      this.onWorldChange();
+      this.emitState();
+    }
   }
 
   redoTerrain(): void {
     if (this.transformSystem.isDragging || this.terrainPointerId !== undefined) return;
-    if (this.terrainHistory?.redo()) this.emitState();
+    if (this.terrainHistory?.redo()) {
+      this.onWorldChange();
+      this.emitState();
+    }
   }
 
   duplicateSelected(): void {
@@ -192,6 +287,7 @@ export class EditorSystem {
     if (!duplicate) return;
     this.activeTool = 'select';
     this.transformSystem.detach();
+    this.onWorldChange();
     this.emitState();
   }
 
@@ -201,6 +297,7 @@ export class EditorSystem {
     if (this.vegetationSystem.selectedRecordId) this.vegetationSystem.removeSelected();
     else this.selectionSystem.removeSelected();
     this.activeTool = 'select';
+    this.onWorldChange();
     this.emitState();
   }
 
@@ -285,6 +382,7 @@ export class EditorSystem {
       this.terrainPointerId = undefined;
       this.activeTerrainStroke = undefined;
       this.setCameraNavigationEnabled(true);
+      this.onWorldChange();
       event.preventDefault();
       this.emitState();
       return;
@@ -356,6 +454,7 @@ export class EditorSystem {
     if (!object || this.activeTool !== 'place') return;
     if (object.kind === 'vegetation') await this.vegetationSystem.add(object);
     else this.selectionSystem.register(object.object);
+    this.onWorldChange();
     this.emitState();
   }
 
@@ -411,7 +510,19 @@ export class EditorSystem {
     if (!(await this.vegetationSystem.duplicateSelected())) return;
     this.activeTool = 'select';
     this.transformSystem.detach();
+    this.onWorldChange();
     this.emitState();
+  }
+
+  private async createSavedObject(
+    record: WorldSaveV1['objects'][number],
+    asset: ResolvedAssetDefinition,
+  ): Promise<Object3D> {
+    const object = await this.assets.createInstance(asset);
+    object.position.fromArray(record.position);
+    object.quaternion.fromArray(record.quaternion);
+    object.scale.fromArray(record.scale);
+    return object;
   }
 
   private get selectedObject(): Object3D | undefined {
