@@ -5,7 +5,7 @@ import {
   SaveVegetationRecord,
   TerrainHeightChange,
   TerrainSurfaceChange,
-  WorldSaveV1,
+  WorldSaveV2,
 } from './save.types';
 import { TERRAIN_SURFACES } from '../world/terrain-surface.types';
 
@@ -16,11 +16,11 @@ export class SaveValidationError extends Error {
   }
 }
 
-export function encodeWorldSave(save: WorldSaveV1, pretty = true): string {
+export function encodeWorldSave(save: WorldSaveV2, pretty = true): string {
   return pretty ? JSON.stringify(save, null, 2) : JSON.stringify(save);
 }
 
-export function decodeWorldSave(text: string): WorldSaveV1 {
+export function decodeWorldSave(text: string): WorldSaveV2 {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -31,18 +31,18 @@ export function decodeWorldSave(text: string): WorldSaveV1 {
   return readSave(value);
 }
 
-function readSave(value: unknown): WorldSaveV1 {
+function readSave(value: unknown): WorldSaveV2 {
   const record = asRecord(value, 'The save file must contain an object.');
   if (record['format'] !== 'quiescent-chevrotain-save') {
     throw new SaveValidationError('This is not a Quiescent Chevrotain save file.');
   }
-  if (record['version'] !== 1) {
+  if (record['version'] !== 2) {
     throw new SaveValidationError('This save version is not supported.');
   }
 
   return {
     format: 'quiescent-chevrotain-save',
-    version: 1,
+    version: 2,
     savedAt: readString(record, 'savedAt'),
     world: readWorld(record['world']),
     camera: readCamera(record['camera']),
@@ -52,7 +52,7 @@ function readSave(value: unknown): WorldSaveV1 {
   };
 }
 
-function readWorld(value: unknown): WorldSaveV1['world'] {
+function readWorld(value: unknown): WorldSaveV2['world'] {
   const record = asRecord(value, 'The save world metadata is invalid.');
   return {
     width: readPositiveNumber(record, 'width'),
@@ -74,6 +74,8 @@ function readObjects(value: unknown): readonly SaveObjectRecord[] {
     const record = asRecord(item, `Object ${index + 1} is invalid.`);
     return {
       assetId: readAssetId(record, index, 'object'),
+      shapeId: readStringField(record, 'shapeId', `object ${index + 1}`),
+      paletteId: readStringField(record, 'paletteId', `object ${index + 1}`),
       position: readVector3(record['position'], `object ${index + 1} position`),
       quaternion: readQuaternion(record['quaternion'], `object ${index + 1} rotation`),
       scale: readVector3(record['scale'], `object ${index + 1} scale`),
@@ -156,6 +158,14 @@ function readAssetId(record: Record<string, unknown>, index: number, kind: strin
     throw new SaveValidationError(`${kind} ${index + 1} has an invalid asset ID.`);
   }
   return assetId;
+}
+
+function readStringField(record: Record<string, unknown>, key: string, label: string): string {
+  const value = record[key];
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new SaveValidationError(`${label} has an invalid ${key}.`);
+  }
+  return value;
 }
 
 function readString(record: Record<string, unknown>, key: string): string {

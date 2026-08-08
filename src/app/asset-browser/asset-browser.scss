@@ -111,6 +111,37 @@
   color: #ffd0c2;
 }
 
+.appearance-controls {
+  display: grid;
+  gap: 0.48rem;
+  margin: 0 0.75rem 0.75rem;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.58rem;
+
+  label {
+    display: grid;
+    grid-template-columns: 4.2rem 1fr;
+    gap: 0.45rem;
+    align-items: center;
+    color: rgba(247, 241, 222, 0.72);
+    font-size: 0.58rem;
+    font-weight: 700;
+  }
+
+  select {
+    min-width: 0;
+    padding: 0.3rem 0.35rem;
+    color: #24392a;
+    font: inherit;
+    font-size: 0.58rem;
+    background: #f3efd9;
+    border: 0;
+    border-radius: 0.3rem;
+  }
+}
+
 @media (max-width: 42rem) {
   :host {
     top: auto;

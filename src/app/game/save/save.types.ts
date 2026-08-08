@@ -14,6 +14,8 @@ export interface SaveCameraState {
 
 export interface SaveObjectRecord {
   readonly assetId: string;
+  readonly shapeId: string;
+  readonly paletteId: string;
   readonly position: SaveVector3;
   readonly quaternion: SaveQuaternion;
   readonly scale: SaveVector3;
@@ -47,9 +49,9 @@ export interface SaveTerrainData {
   readonly surfaceChanges: readonly TerrainSurfaceChange[];
 }
 
-export interface WorldSaveV1 {
+export interface WorldSaveV2 {
   readonly format: 'quiescent-chevrotain-save';
-  readonly version: 1;
+  readonly version: 2;
   readonly savedAt: string;
   readonly world: SaveWorldConfig;
   readonly camera: SaveCameraState;

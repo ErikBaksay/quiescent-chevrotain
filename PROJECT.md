@@ -133,6 +133,8 @@ Do not serialize Three.js object graphs. Save logical data and reconstruct rende
   "objects": [
     {
       "assetId": "house-01",
+      "shapeId": "default",
+      "paletteId": "default",
       "position": [12, 0, 48],
       "rotation": [0, 1.2, 0],
       "scale": [1, 1, 1],
@@ -192,13 +194,13 @@ Completion means a stable, attractive, interactive empty world. No editor intera
 
 Completion means the primitive place/select/transform/delete loop is stable without introducing the asset catalogue or persistence concerns.
 
-### Stage 3 — Southern Heritage Collection and real asset system (current)
+### Stage 3 — Asset catalogue and real asset system (current)
 
 - GLB loading, generic definitions, and catalogue
-- Continuous placement ghost and the eight-piece Southern American Heritage Town Collection
+- Continuous placement ghost and the first reusable asset catalogue
 - Duplicate, scale, and optional snapping
 
-The collection spans 1820–1910 with maintained historical patina. The approved runtime collection currently includes the Neoclassical Courthouse, Greek Revival Residence, and the three-form Southern Live Oak vegetation asset; each authored asset requires separate concept and final approval before work begins on the next.
+The approved runtime collection currently includes Civic Hall, Porch Residence, the three-form Mature Broadleaf Tree vegetation asset, and the three-shape/four-palette Narrow-front Residence Set. Building appearances can expose named shape and palette variants through one shared GLB package; each authored asset requires separate concept and final approval before runtime integration.
 
 ### Stage 4 — Editor robustness
 

@@ -45,6 +45,12 @@ export class SelectionSystem {
       return [
         {
           assetId,
+          shapeId:
+            typeof object.userData['shapeId'] === 'string' ? object.userData['shapeId'] : 'default',
+          paletteId:
+            typeof object.userData['paletteId'] === 'string'
+              ? object.userData['paletteId']
+              : 'default',
           position: object.position.toArray() as [number, number, number],
           quaternion: object.quaternion.toArray() as [number, number, number, number],
           scale: object.scale.toArray() as [number, number, number],

@@ -34,8 +34,19 @@ interface AssetDefinition {
   model: string;
   thumbnail: string;
   defaultScale: number;
+  appearance?: {
+    defaultShapeId: string;
+    defaultPaletteId: string;
+    shapes: { id: string; name: string; root: string }[];
+    palettes: { id: string; name: string; colors: Record<string, string> }[];
+  };
 }
 ```
+
+Object appearance variants remain inside one GLB. Each shape points to a named root that is
+cloned for placement, while palettes map shared material names to six-digit base colours.
+The runtime caches palette material clones so instances using the same palette continue to
+share render resources.
 
 Legacy manifests omit `renderMode` and resolve as ordinary object assets. Instanced vegetation uses `renderMode: "vegetation"`, remains in the `nature` category, and adds positive radius/height bounds plus one or more variants. Each variant names its LOD0 meshes, LOD1 meshes, eight-view impostor mesh, and shadow-proxy mesh inside the GLB. Paths retain the same safe package-relative rules as ordinary assets.
 
@@ -45,7 +56,7 @@ IDs and folder names use lowercase kebab case. Paths must be relative, use forwa
 
 ## Scene and naming conventions
 
-- Export one asset root named for the asset in PascalCase, for example `NeoclassicalCourthouse`.
+- Export one asset root named for the asset in PascalCase, for example `CivicHall`.
 - Name meshes by function and location, such as `Walls_Main`, `Trim_Portico`, or `Roof_Cupola`.
 - Use the shared material vocabulary where applicable: `Walls`, `Trim`, `Roof`, `Door`, `WindowGlass`, `Metal`, and `Wood`.
 - Suffix genuine variants only when their shader inputs differ, for example `Metal_Copper` and `Metal_Iron`.

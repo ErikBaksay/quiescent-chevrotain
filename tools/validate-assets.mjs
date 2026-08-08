@@ -176,6 +176,71 @@ async function validateManifest(manifestPath, ids) {
         }
       }
     }
+  } else if (definition.appearance !== undefined) {
+    const appearance = definition.appearance;
+    if (
+      !appearance ||
+      typeof appearance !== 'object' ||
+      !Array.isArray(appearance.shapes) ||
+      appearance.shapes.length === 0 ||
+      !Array.isArray(appearance.palettes) ||
+      appearance.palettes.length === 0 ||
+      typeof appearance.defaultShapeId !== 'string' ||
+      typeof appearance.defaultPaletteId !== 'string'
+    ) {
+      report(scope, 'appearance must define defaults, shapes, and palettes');
+    } else {
+      const shapeIds = new Set();
+      for (const shape of appearance.shapes) {
+        if (
+          !shape ||
+          typeof shape.id !== 'string' ||
+          typeof shape.name !== 'string' ||
+          typeof shape.root !== 'string' ||
+          shapeIds.has(shape.id)
+        ) {
+          report(scope, 'appearance contains a malformed or duplicate shape');
+        } else {
+          shapeIds.add(shape.id);
+        }
+      }
+      const paletteIds = new Set();
+      for (const palette of appearance.palettes) {
+        if (
+          !palette ||
+          typeof palette.id !== 'string' ||
+          typeof palette.name !== 'string' ||
+          !palette.colors ||
+          typeof palette.colors !== 'object' ||
+          Array.isArray(palette.colors) ||
+          paletteIds.has(palette.id) ||
+          Object.values(palette.colors).some(
+            (color) => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color),
+          )
+        ) {
+          report(scope, 'appearance contains a malformed or duplicate palette');
+          continue;
+        }
+        if (
+          palette.materialVariants !== undefined &&
+          (!palette.materialVariants ||
+            typeof palette.materialVariants !== 'object' ||
+            Array.isArray(palette.materialVariants) ||
+            Object.values(palette.materialVariants).some(
+              (material) => typeof material !== 'string' || material.trim().length === 0,
+            ))
+        ) {
+          report(scope, 'appearance contains malformed material variants');
+        }
+        paletteIds.add(palette.id);
+      }
+      if (
+        !shapeIds.has(appearance.defaultShapeId) ||
+        !paletteIds.has(appearance.defaultPaletteId)
+      ) {
+        report(scope, 'appearance defaults must reference declared variants');
+      }
+    }
   }
 
   const manifestDirectory = path.dirname(manifestPath);

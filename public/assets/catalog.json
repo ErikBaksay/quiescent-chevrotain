@@ -1,8 +1,9 @@
 {
   "version": 1,
   "manifests": [
-    "models/neoclassical-courthouse/asset.json",
-    "models/greek-revival-residence/asset.json",
-    "models/southern-live-oak/asset.json"
+    "models/civic-hall/asset.json",
+    "models/porch-residence/asset.json",
+    "models/mature-broadleaf-tree/asset.json",
+    "models/narrow-front-residence/asset.json"
   ]
 }

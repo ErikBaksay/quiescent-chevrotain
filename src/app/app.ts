@@ -7,7 +7,7 @@ import { EditorState, INITIAL_EDITOR_STATE } from './game/editor/editor.types';
 import { GameViewport } from './game/viewport/game-viewport';
 import { decodeWorldSave } from './game/save/save-codec';
 import { loadLocalWorldSave, saveLocalWorldSave } from './game/save/save-storage';
-import { SaveLoadWarning, WorldSaveV1 } from './game/save/save.types';
+import { SaveLoadWarning, WorldSaveV2 } from './game/save/save.types';
 import { WORLD_CONFIG } from './game/world/world.config';
 import {
   DEFAULT_VEGETATION_QUALITY,
@@ -35,7 +35,7 @@ export class App {
   protected readonly saveMessage = signal('');
   protected readonly hasLocalSave = signal(false);
 
-  private pendingLocalSave: WorldSaveV1 | undefined;
+  private pendingLocalSave: WorldSaveV2 | undefined;
   private assetMapPromise: Promise<ReadonlyMap<string, ResolvedAssetDefinition>> | undefined;
   private autosaveTimer: ReturnType<typeof setTimeout> | undefined;
   private worldReady = false;
@@ -110,7 +110,7 @@ export class App {
   }
 
   protected async loadLocal(world: GameViewport): Promise<void> {
-    let save: WorldSaveV1 | undefined;
+    let save: WorldSaveV2 | undefined;
     try {
       save = this.readLocalSave();
     } catch (error) {
@@ -200,7 +200,7 @@ export class App {
     }
   }
 
-  private readLocalSave(): WorldSaveV1 | undefined {
+  private readLocalSave(): WorldSaveV2 | undefined {
     if (typeof localStorage === 'undefined') return undefined;
     return loadLocalWorldSave(localStorage);
   }
@@ -225,7 +225,7 @@ export class App {
     }
   }
 
-  private async applySave(save: WorldSaveV1, world: GameViewport, label: string): Promise<void> {
+  private async applySave(save: WorldSaveV2, world: GameViewport, label: string): Promise<void> {
     if (
       this.worldDirty &&
       typeof window !== 'undefined' &&
@@ -269,7 +269,7 @@ export class App {
     this.saveMessage.set(error instanceof Error ? error.message : fallback);
   }
 
-  private fileTimestamp(save: WorldSaveV1): string {
+  private fileTimestamp(save: WorldSaveV2): string {
     const date = new Date(save.savedAt);
     if (Number.isNaN(date.getTime())) return 'save';
     const pad = (value: number) => value.toString().padStart(2, '0');

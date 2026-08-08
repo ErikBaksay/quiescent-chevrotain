@@ -1,0 +1,135 @@
+{
+  "id": "narrow-front-residence",
+  "name": "Narrow-front Residence Set",
+  "category": "residential",
+  "model": "model.glb",
+  "thumbnail": "thumbnail.webp",
+  "defaultScale": 1,
+  "appearance": {
+    "defaultShapeId": "gable",
+    "defaultPaletteId": "brick-cream",
+    "shapes": [
+      {
+        "id": "gable",
+        "name": "Gable",
+        "root": "Shape_Gable"
+      },
+      {
+        "id": "cornice",
+        "name": "Cornice",
+        "root": "Shape_Cornice"
+      },
+      {
+        "id": "paired",
+        "name": "Paired",
+        "root": "Shape_Paired"
+      }
+    ],
+    "palettes": [
+      {
+        "id": "brick-cream",
+        "name": "Brick and cream",
+        "materialVariants": {
+          "Walls": "WallsBrick",
+          "Brick": "ChimneyBrick",
+          "Stone": "FoundationStone",
+          "Trim": "PaintedTrim",
+          "Roof": "RoofShingle",
+          "Door": "PaintedDoor",
+          "Wood": "PaintedTrim",
+          "Metal": "Iron"
+        },
+        "colors": {
+          "Walls": "#a85a40",
+          "Brick": "#7f3829",
+          "Stone": "#b8a98d",
+          "Trim": "#eadfc8",
+          "Roof": "#252b2a",
+          "Door": "#3c302b",
+          "Wood": "#6b4d3b",
+          "WindowGlass": "#24353a",
+          "WindowInterior": "#080b0b",
+          "Metal": "#2a2925"
+        }
+      },
+      {
+        "id": "painted-blue",
+        "name": "Painted blue",
+        "materialVariants": {
+          "Walls": "WallsSiding",
+          "Brick": "ChimneyBrick",
+          "Stone": "FoundationStone",
+          "Trim": "PaintedTrim",
+          "Roof": "RoofShingle",
+          "Door": "PaintedDoor",
+          "Wood": "PaintedTrim",
+          "Metal": "Iron"
+        },
+        "colors": {
+          "Walls": "#617d8d",
+          "Brick": "#645a50",
+          "Stone": "#aaa79b",
+          "Trim": "#e6decf",
+          "Roof": "#303a40",
+          "Door": "#30414d",
+          "Wood": "#6b5c4b",
+          "WindowGlass": "#20313a",
+          "WindowInterior": "#080b0b",
+          "Metal": "#292b2a"
+        }
+      },
+      {
+        "id": "ochre-green",
+        "name": "Ochre and green",
+        "materialVariants": {
+          "Walls": "WallsPlaster",
+          "Brick": "ChimneyBrick",
+          "Stone": "FoundationStone",
+          "Trim": "PaintedTrim",
+          "Roof": "RoofShingle",
+          "Door": "PaintedDoor",
+          "Wood": "PaintedTrim",
+          "Metal": "Iron"
+        },
+        "colors": {
+          "Walls": "#b3914d",
+          "Brick": "#866a36",
+          "Stone": "#b5aa8c",
+          "Trim": "#596644",
+          "Roof": "#263a31",
+          "Door": "#405943",
+          "Wood": "#6e5837",
+          "WindowGlass": "#26352e",
+          "WindowInterior": "#080b0b",
+          "Metal": "#29352d"
+        }
+      },
+      {
+        "id": "stone-brown",
+        "name": "Stone and brown",
+        "materialVariants": {
+          "Walls": "WallsStone",
+          "Brick": "ChimneyBrick",
+          "Stone": "FoundationStone",
+          "Trim": "PaintedTrim",
+          "Roof": "RoofShingle",
+          "Door": "PaintedDoor",
+          "Wood": "PaintedTrim",
+          "Metal": "Iron"
+        },
+        "colors": {
+          "Walls": "#aaa294",
+          "Brick": "#765343",
+          "Stone": "#c4bca9",
+          "Trim": "#6b5140",
+          "Roof": "#36312c",
+          "Door": "#5a4232",
+          "Wood": "#765c45",
+          "WindowGlass": "#2a302e",
+          "WindowInterior": "#080b0b",
+          "Metal": "#2d2a27"
+        }
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 <aside class="asset-browser" aria-label="Asset catalogue">
   <header>
-    <span>Heritage collection</span>
+    <span>World assets</span>
     <strong>Assets</strong>
   </header>
 
@@ -36,5 +36,28 @@
         </button>
       }
     </div>
+  }
+
+  @if (selectedAsset(); as asset) {
+    @if (appearanceOf(asset); as appearance) {
+      <section class="appearance-controls" aria-label="Asset appearance">
+        <label>
+          <span>Shape</span>
+          <select [value]="selectedShapeId()" (change)="setShape($any($event.target).value)">
+            @for (shape of appearance.shapes; track shape.id) {
+              <option [value]="shape.id">{{ shape.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Palette</span>
+          <select [value]="selectedPaletteId()" (change)="setPalette($any($event.target).value)">
+            @for (palette of appearance.palettes; track palette.id) {
+              <option [value]="palette.id">{{ palette.name }}</option>
+            }
+          </select>
+        </label>
+      </section>
+    }
   }
 </aside>

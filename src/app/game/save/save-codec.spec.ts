@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { decodeWorldSave, encodeWorldSave, SaveValidationError } from './save-codec';
-import { WorldSaveV1 } from './save.types';
+import { WorldSaveV2 } from './save.types';
 
-const save: WorldSaveV1 = {
+const save: WorldSaveV2 = {
   format: 'quiescent-chevrotain-save',
-  version: 1,
+  version: 2,
   savedAt: '2026-08-08T12:00:00.000Z',
   world: { width: 100, depth: 100, sampleSpacing: 2 },
   camera: {
@@ -14,6 +14,8 @@ const save: WorldSaveV1 = {
   objects: [
     {
       assetId: 'house',
+      shapeId: 'default',
+      paletteId: 'default',
       position: [1, 2, 3],
       quaternion: [0, 0.25, 0, 0.9682458],
       scale: [1, 1, 1],
@@ -42,7 +44,7 @@ describe('world save codec', () => {
   });
 
   it('rejects unsupported versions and malformed vectors', () => {
-    expect(() => decodeWorldSave(JSON.stringify({ ...save, version: 2 }))).toThrow(
+    expect(() => decodeWorldSave(JSON.stringify({ ...save, version: 1 }))).toThrow(
       SaveValidationError,
     );
     expect(() =>

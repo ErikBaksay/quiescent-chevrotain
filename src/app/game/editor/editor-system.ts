@@ -1,5 +1,9 @@
 import { Object3D, PerspectiveCamera, Scene, Vector2 } from 'three';
-import { ResolvedAssetDefinition, isVegetationAsset } from '../../assets/asset.types';
+import {
+  AssetPlacementSelection,
+  ResolvedAssetDefinition,
+  isVegetationAsset,
+} from '../../assets/asset.types';
 import { AssetManager } from '../assets/asset-manager';
 import { EditorState, EditorTool, INITIAL_EDITOR_STATE } from './editor.types';
 import { PlacementSystem } from './placement-system';
@@ -13,7 +17,7 @@ import { TerrainPaintSystem } from '../world/terrain-paint-system';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { DEFAULT_TERRAIN_SURFACE, TerrainSurfaceId } from '../world/terrain-surface.types';
 import { TerrainSculptSystem } from '../world/terrain-sculpt-system';
-import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
+import { SaveLoadWarning, WorldSaveV2 } from '../save/save.types';
 
 interface PointerStart {
   readonly id: number;
@@ -103,7 +107,7 @@ export class EditorSystem {
     };
   }
 
-  createSaveData(): Pick<WorldSaveV1, 'objects' | 'vegetation' | 'terrain'> {
+  createSaveData(): Pick<WorldSaveV2, 'objects' | 'vegetation' | 'terrain'> {
     return {
       objects: this.selectionSystem.createSaveRecords(),
       vegetation: this.vegetationSystem.createSaveRecords(),
@@ -115,7 +119,7 @@ export class EditorSystem {
   }
 
   async loadSaveData(
-    save: Pick<WorldSaveV1, 'objects' | 'vegetation' | 'terrain'>,
+    save: Pick<WorldSaveV2, 'objects' | 'vegetation' | 'terrain'>,
     assets: ReadonlyMap<string, ResolvedAssetDefinition>,
   ): Promise<SaveLoadWarning | undefined> {
     const skippedAssetIds = new Set<string>();
@@ -187,14 +191,14 @@ export class EditorSystem {
     };
   }
 
-  beginAssetPlacement(asset: ResolvedAssetDefinition): void {
+  beginAssetPlacement(selection: AssetPlacementSelection | ResolvedAssetDefinition): void {
     this.stopTerrainStroke(false);
     this.activeTool = 'place';
     this.transformSystem.detach();
     this.selectionSystem.select(undefined);
     this.vegetationSystem.select(undefined);
     this.canvas.style.cursor = 'crosshair';
-    void this.placementSystem.begin(asset);
+    void this.placementSystem.begin(selection);
     this.emitState();
   }
 
@@ -515,10 +519,10 @@ export class EditorSystem {
   }
 
   private async createSavedObject(
-    record: WorldSaveV1['objects'][number],
+    record: WorldSaveV2['objects'][number],
     asset: ResolvedAssetDefinition,
   ): Promise<Object3D> {
-    const object = await this.assets.createInstance(asset);
+    const object = await this.assets.createInstance(asset, record.shapeId, record.paletteId);
     object.position.fromArray(record.position);
     object.quaternion.fromArray(record.quaternion);
     object.scale.fromArray(record.scale);

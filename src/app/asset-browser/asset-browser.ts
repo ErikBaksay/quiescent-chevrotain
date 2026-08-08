@@ -1,6 +1,12 @@
 import { Component, OnInit, computed, inject, output, signal } from '@angular/core';
 import { AssetCatalogService } from '../assets/asset-catalog.service';
-import { ASSET_CATEGORIES, AssetCategory, ResolvedAssetDefinition } from '../assets/asset.types';
+import {
+  ASSET_CATEGORIES,
+  AssetCategory,
+  AssetPlacementSelection,
+  ResolvedAssetDefinition,
+  isVegetationAsset,
+} from '../assets/asset.types';
 
 type BrowserStatus = 'loading' | 'ready' | 'error';
 
@@ -10,13 +16,16 @@ type BrowserStatus = 'loading' | 'ready' | 'error';
   styleUrl: './asset-browser.scss',
 })
 export class AssetBrowser implements OnInit {
-  readonly assetSelected = output<ResolvedAssetDefinition>();
+  readonly assetSelected = output<AssetPlacementSelection>();
   readonly activeAssetId = signal<string | null>(null);
 
   private readonly catalog = inject(AssetCatalogService);
   protected readonly categories = ASSET_CATEGORIES;
   protected readonly status = signal<BrowserStatus>('loading');
   protected readonly assets = signal<readonly ResolvedAssetDefinition[]>([]);
+  protected readonly selectedAsset = signal<ResolvedAssetDefinition | null>(null);
+  protected readonly selectedShapeId = signal('default');
+  protected readonly selectedPaletteId = signal('default');
   protected readonly category = signal<AssetCategory | 'all'>('all');
   protected readonly error = signal('');
   protected readonly visibleAssets = computed(() => {
@@ -40,7 +49,35 @@ export class AssetBrowser implements OnInit {
 
   protected select(asset: ResolvedAssetDefinition): void {
     this.activeAssetId.set(asset.id);
-    this.assetSelected.emit(asset);
+    this.selectedAsset.set(asset);
+    const appearance = this.appearanceOf(asset);
+    this.selectedShapeId.set(appearance?.defaultShapeId ?? 'default');
+    this.selectedPaletteId.set(appearance?.defaultPaletteId ?? 'default');
+    this.emitSelection();
+  }
+
+  protected setShape(shapeId: string): void {
+    this.selectedShapeId.set(shapeId);
+    this.emitSelection();
+  }
+
+  protected setPalette(paletteId: string): void {
+    this.selectedPaletteId.set(paletteId);
+    this.emitSelection();
+  }
+
+  private emitSelection(): void {
+    const asset = this.selectedAsset();
+    if (!asset) return;
+    this.assetSelected.emit({
+      asset,
+      shapeId: this.selectedShapeId(),
+      paletteId: this.selectedPaletteId(),
+    });
+  }
+
+  protected appearanceOf(asset: ResolvedAssetDefinition) {
+    return isVegetationAsset(asset) ? undefined : asset.appearance;
   }
 
   protected categoryLabel(category: AssetCategory): string {

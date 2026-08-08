@@ -1,0 +1,198 @@
+{
+  "asset": "NarrowFrontResidence",
+  "expectedFootprintMetres": [10.4, 12.0],
+  "boundsMetresBlender": {
+    "minimum": [-5.13, -6.54, 0.0],
+    "maximum": [5.13, 5.57, 11.59],
+    "dimensions": [10.26, 12.11, 11.59]
+  },
+  "meshObjects": 40,
+  "vertices": 25610,
+  "triangles": 48020,
+  "drawCalls": 40,
+  "materials": [
+    "Brick",
+    "ChimneyBrick",
+    "Door",
+    "FoundationStone",
+    "Iron",
+    "Metal",
+    "PaintedDoor",
+    "PaintedTrim",
+    "Roof",
+    "RoofShingle",
+    "Stone",
+    "Trim",
+    "Walls",
+    "WallsBrick",
+    "WallsPlaster",
+    "WallsSiding",
+    "WallsStone",
+    "WindowGlass",
+    "WindowInterior",
+    "Wood"
+  ],
+  "variants": {
+    "Shape_Cornice": {
+      "meshObjects": 10,
+      "vertices": 6888,
+      "triangles": 12996,
+      "drawCalls": 10,
+      "materials": [
+        "Brick",
+        "Door",
+        "Metal",
+        "Roof",
+        "Stone",
+        "Trim",
+        "Walls",
+        "WindowGlass",
+        "WindowInterior",
+        "Wood"
+      ]
+    },
+    "Shape_Gable": {
+      "meshObjects": 10,
+      "vertices": 6566,
+      "triangles": 12352,
+      "drawCalls": 10,
+      "materials": [
+        "Brick",
+        "Door",
+        "Metal",
+        "Roof",
+        "Stone",
+        "Trim",
+        "Walls",
+        "WindowGlass",
+        "WindowInterior",
+        "Wood"
+      ]
+    },
+    "Shape_Paired": {
+      "meshObjects": 10,
+      "vertices": 12076,
+      "triangles": 22552,
+      "drawCalls": 10,
+      "materials": [
+        "Brick",
+        "Door",
+        "Metal",
+        "Roof",
+        "Stone",
+        "Trim",
+        "Walls",
+        "WindowGlass",
+        "WindowInterior",
+        "Wood"
+      ]
+    }
+  },
+  "pbrMaterials": {
+    "Walls": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "PaintedDoor": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Door": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "WallsPlaster": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "WindowInterior": {
+      "baseColor": false,
+      "normal": false,
+      "orm": false
+    },
+    "WallsStone": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "WallsBrick": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "WallsSiding": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Roof": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Brick": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Trim": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "RoofShingle": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Wood": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Metal": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "WindowGlass": {
+      "baseColor": false,
+      "normal": false,
+      "orm": false
+    },
+    "ChimneyBrick": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Iron": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "FoundationStone": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "Stone": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    },
+    "PaintedTrim": {
+      "baseColor": true,
+      "normal": true,
+      "orm": true
+    }
+  },
+  "camerasExported": 0,
+  "lightsExported": 0,
+  "invalidValues": [],
+  "groundAligned": true,
+  "glbBytes": 20313628
+}

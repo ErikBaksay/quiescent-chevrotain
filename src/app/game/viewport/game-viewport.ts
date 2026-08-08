@@ -15,11 +15,11 @@ import {
 } from '@angular/core';
 import { GameEngine } from '../engine/game-engine';
 import { EditorState, EditorTool } from '../editor/editor.types';
-import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { AssetPlacementSelection, ResolvedAssetDefinition } from '../../assets/asset.types';
 import { VegetationQuality } from '../vegetation/vegetation-quality';
 import { TerrainBrushSettings, TerrainSculptTool } from '../world/terrain-sculpt.types';
 import { TerrainSurfaceId } from '../world/terrain-surface.types';
-import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
+import { SaveLoadWarning, WorldSaveV2 } from '../save/save.types';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -101,8 +101,8 @@ export class GameViewport implements AfterViewInit, OnDestroy {
     this.engine?.setEditorTool(tool);
   }
 
-  beginAssetPlacement(asset: ResolvedAssetDefinition): void {
-    this.engine?.beginAssetPlacement(asset);
+  beginAssetPlacement(selection: AssetPlacementSelection | ResolvedAssetDefinition): void {
+    this.engine?.beginAssetPlacement(selection);
   }
   setVegetationQuality(quality: VegetationQuality): void {
     this.engine?.setVegetationQuality(quality);
@@ -137,12 +137,12 @@ export class GameViewport implements AfterViewInit, OnDestroy {
     this.engine?.redoTerrain();
   }
 
-  createSave(): WorldSaveV1 | undefined {
+  createSave(): WorldSaveV2 | undefined {
     return this.engine?.createSave();
   }
 
   loadSave(
-    save: WorldSaveV1,
+    save: WorldSaveV2,
     assets: ReadonlyMap<string, ResolvedAssetDefinition>,
   ): Promise<SaveLoadWarning | undefined> {
     return (

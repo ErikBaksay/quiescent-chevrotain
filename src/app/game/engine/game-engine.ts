@@ -1,5 +1,5 @@
 import { AgXToneMapping, PCFSoftShadowMap, Scene, SRGBColorSpace, WebGLRenderer } from 'three';
-import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { AssetPlacementSelection, ResolvedAssetDefinition } from '../../assets/asset.types';
 import { AssetManager } from '../assets/asset-manager';
 import { EditorSystem } from '../editor/editor-system';
 import { EditorState, EditorTool } from '../editor/editor.types';
@@ -10,7 +10,7 @@ import { TerrainSurfaceId } from '../world/terrain-surface.types';
 import { CameraSystem } from './camera-system';
 import { EnvironmentSystem } from './environment-system';
 import { VEGETATION_QUALITY_PROFILES, VegetationQuality } from '../vegetation/vegetation-quality';
-import { SaveLoadWarning, WorldSaveV1 } from '../save/save.types';
+import { SaveLoadWarning, WorldSaveV2 } from '../save/save.types';
 
 export type GameEngineState = 'running' | 'context-lost';
 
@@ -77,8 +77,8 @@ export class GameEngine {
     this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
   }
 
-  beginAssetPlacement(asset: ResolvedAssetDefinition): void {
-    this.editorSystem.beginAssetPlacement(asset);
+  beginAssetPlacement(selection: AssetPlacementSelection | ResolvedAssetDefinition): void {
+    this.editorSystem.beginAssetPlacement(selection);
   }
 
   start(): void {
@@ -132,11 +132,11 @@ export class GameEngine {
     this.editorSystem.redoTerrain();
   }
 
-  createSave(): WorldSaveV1 {
+  createSave(): WorldSaveV2 {
     const editor = this.editorSystem.createSaveData();
     return {
       format: 'quiescent-chevrotain-save',
-      version: 1,
+      version: 2,
       savedAt: new Date().toISOString(),
       world: {
         width: WORLD_CONFIG.width,
@@ -151,7 +151,7 @@ export class GameEngine {
   }
 
   async loadSave(
-    save: WorldSaveV1,
+    save: WorldSaveV2,
     assets: ReadonlyMap<string, ResolvedAssetDefinition>,
   ): Promise<SaveLoadWarning | undefined> {
     if (
@@ -176,7 +176,7 @@ export class GameEngine {
     await this.loadSave(
       {
         format: 'quiescent-chevrotain-save',
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
         world: {
           width: WORLD_CONFIG.width,

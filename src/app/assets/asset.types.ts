@@ -21,6 +21,28 @@ interface BaseAssetDefinition {
 export interface ObjectAssetDefinition extends BaseAssetDefinition {
   /** Omitted by legacy manifests. */
   readonly renderMode?: 'object';
+  readonly appearance?: ObjectAppearanceDefinition;
+}
+
+export interface ObjectShapeVariantDefinition {
+  readonly id: string;
+  readonly name: string;
+  readonly root: string;
+}
+
+export interface ObjectPaletteDefinition {
+  readonly id: string;
+  readonly name: string;
+  readonly colors: Readonly<Record<string, string>>;
+  /** Optional source-material aliases used to swap palette-specific texture sets. */
+  readonly materialVariants?: Readonly<Record<string, string>>;
+}
+
+export interface ObjectAppearanceDefinition {
+  readonly defaultShapeId: string;
+  readonly defaultPaletteId: string;
+  readonly shapes: readonly ObjectShapeVariantDefinition[];
+  readonly palettes: readonly ObjectPaletteDefinition[];
 }
 
 export interface VegetationVariantDefinition {
@@ -55,6 +77,12 @@ interface ResolvedUrls {
 
 export type ResolvedAssetDefinition = AssetDefinition & ResolvedUrls;
 export type ResolvedVegetationAssetDefinition = VegetationAssetDefinition & ResolvedUrls;
+
+export interface AssetPlacementSelection {
+  readonly asset: ResolvedAssetDefinition;
+  readonly shapeId: string;
+  readonly paletteId: string;
+}
 
 export function isVegetationAsset(
   asset: AssetDefinition | ResolvedAssetDefinition,

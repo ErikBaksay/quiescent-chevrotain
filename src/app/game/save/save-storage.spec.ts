@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadLocalWorldSave, saveLocalWorldSave, WORLD_SAVE_STORAGE_KEY } from './save-storage';
-import { WorldSaveV1 } from './save.types';
+import { WorldSaveV2 } from './save.types';
 
-const save: WorldSaveV1 = {
+const save: WorldSaveV2 = {
   format: 'quiescent-chevrotain-save',
-  version: 1,
+  version: 2,
   savedAt: '2026-08-08T12:00:00.000Z',
   world: {
     width: 100,

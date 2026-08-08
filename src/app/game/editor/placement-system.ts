@@ -11,6 +11,7 @@ import {
   Color,
 } from 'three';
 import {
+  AssetPlacementSelection,
   ResolvedAssetDefinition,
   ResolvedVegetationAssetDefinition,
   isVegetationAsset,
@@ -53,7 +54,14 @@ export class PlacementSystem {
   private requestSequence = 0;
   private placementState: PlacementState = { activeAssetId: null, status: 'idle', error: null };
   private gridSnapEnabled = false;
-  private variation = { variantIndex: 0, yaw: 0, scale: 1, tint: new Color(1, 1, 1) };
+  private variation = {
+    variantIndex: 0,
+    yaw: 0,
+    scale: 1,
+    tint: new Color(1, 1, 1),
+    shapeId: 'default',
+    paletteId: 'default',
+  };
 
   constructor(
     private readonly scene: Scene,
@@ -66,14 +74,26 @@ export class PlacementSystem {
     return this.placementState;
   }
 
-  async begin(asset: ResolvedAssetDefinition): Promise<void> {
+  async begin(selection: AssetPlacementSelection | ResolvedAssetDefinition): Promise<void> {
+    const asset = 'asset' in selection ? selection.asset : selection;
+    const shapeId = 'asset' in selection ? selection.shapeId : this.defaultShapeId(asset);
+    const paletteId = 'asset' in selection ? selection.paletteId : this.defaultPaletteId(asset);
     const request = ++this.requestSequence;
     this.removeGhost();
     this.activeAsset = asset;
     this.setState(asset.id, 'loading', null);
-    this.variation = this.nextVariation(asset);
+    this.variation = {
+      ...this.nextVariation(asset),
+      shapeId,
+      paletteId,
+    };
     try {
-      const ghost = await this.assets.createPlacementPreview(asset, this.variation.variantIndex);
+      const ghost = await this.assets.createPlacementPreview(
+        asset,
+        this.variation.variantIndex,
+        shapeId,
+        paletteId,
+      );
       if (request !== this.requestSequence || this.activeAsset?.id !== asset.id) return;
       ghost.name = `${asset.name} Placement Ghost`;
       ghost.visible = false;
@@ -144,7 +164,11 @@ export class PlacementSystem {
       void this.begin(this.activeAsset);
       return commit;
     }
-    const instance = await this.assets.createInstance(this.activeAsset);
+    const instance = await this.assets.createInstance(
+      this.activeAsset,
+      this.variation.shapeId,
+      this.variation.paletteId,
+    );
     instance.position.copy(this.snappedPoint());
     return { kind: 'object', object: instance };
   }
@@ -188,7 +212,14 @@ export class PlacementSystem {
 
   private nextVariation(asset: ResolvedAssetDefinition): typeof this.variation {
     if (!isVegetationAsset(asset)) {
-      return { variantIndex: 0, yaw: 0, scale: 1, tint: new Color(1, 1, 1) };
+      return {
+        variantIndex: 0,
+        yaw: 0,
+        scale: 1,
+        tint: new Color(1, 1, 1),
+        shapeId: this.defaultShapeId(asset),
+        paletteId: this.defaultPaletteId(asset),
+      };
     }
     const tintOffset = (Math.random() - 0.5) * 0.055;
     return {
@@ -196,6 +227,16 @@ export class PlacementSystem {
       yaw: Math.random() * Math.PI * 2,
       scale: 0.9 + Math.random() * 0.2,
       tint: new Color().setHSL(0.29 + tintOffset, 0.38, 0.92 + tintOffset * 0.2),
+      shapeId: 'default',
+      paletteId: 'default',
     };
+  }
+
+  private defaultShapeId(asset: ResolvedAssetDefinition): string {
+    return isVegetationAsset(asset) ? 'default' : (asset.appearance?.defaultShapeId ?? 'default');
+  }
+
+  private defaultPaletteId(asset: ResolvedAssetDefinition): string {
+    return isVegetationAsset(asset) ? 'default' : (asset.appearance?.defaultPaletteId ?? 'default');
   }
 }

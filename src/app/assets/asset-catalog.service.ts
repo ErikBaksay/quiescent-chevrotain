@@ -4,6 +4,7 @@ import {
   ASSET_CATEGORIES,
   AssetCatalog,
   AssetDefinition,
+  ObjectAssetDefinition,
   ResolvedAssetDefinition,
   isVegetationAsset,
 } from './asset.types';
@@ -89,6 +90,71 @@ export class AssetCatalogService {
       ) {
         throw new Error('A vegetation asset manifest is malformed.');
       }
+    } else if (asset.appearance) {
+      this.validateAppearance(asset);
+    }
+  }
+
+  private validateAppearance(asset: ObjectAssetDefinition): void {
+    const appearance = asset.appearance;
+    if (
+      !appearance ||
+      typeof appearance.defaultShapeId !== 'string' ||
+      typeof appearance.defaultPaletteId !== 'string' ||
+      !Array.isArray(appearance.shapes) ||
+      appearance.shapes.length === 0 ||
+      !Array.isArray(appearance.palettes) ||
+      appearance.palettes.length === 0
+    ) {
+      throw new Error(`${asset.name} has a malformed appearance definition.`);
+    }
+
+    const shapeIds = new Set<string>();
+    for (const shape of appearance.shapes) {
+      if (
+        !shape ||
+        typeof shape.id !== 'string' ||
+        typeof shape.name !== 'string' ||
+        typeof shape.root !== 'string' ||
+        shapeIds.has(shape.id)
+      ) {
+        throw new Error(`${asset.name} has malformed shape variants.`);
+      }
+      shapeIds.add(shape.id);
+    }
+
+    const paletteIds = new Set<string>();
+    for (const palette of appearance.palettes) {
+      if (
+        !palette ||
+        typeof palette.id !== 'string' ||
+        typeof palette.name !== 'string' ||
+        !palette.colors ||
+        typeof palette.colors !== 'object' ||
+        Array.isArray(palette.colors) ||
+        paletteIds.has(palette.id) ||
+        Object.values(palette.colors).some(
+          (color) => typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color),
+        )
+      ) {
+        throw new Error(`${asset.name} has malformed material palettes.`);
+      }
+      if (
+        palette.materialVariants !== undefined &&
+        (!palette.materialVariants ||
+          typeof palette.materialVariants !== 'object' ||
+          Array.isArray(palette.materialVariants) ||
+          Object.values(palette.materialVariants).some(
+            (material) => typeof material !== 'string' || material.trim().length === 0,
+          ))
+      ) {
+        throw new Error(`${asset.name} has malformed material palette variants.`);
+      }
+      paletteIds.add(palette.id);
+    }
+
+    if (!shapeIds.has(appearance.defaultShapeId) || !paletteIds.has(appearance.defaultPaletteId)) {
+      throw new Error(`${asset.name} has an invalid appearance default.`);
     }
   }
 }

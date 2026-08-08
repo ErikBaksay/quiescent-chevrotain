@@ -1,0 +1,8 @@
+{
+  "id": "civic-hall",
+  "name": "Civic Hall",
+  "category": "civic",
+  "model": "model.glb",
+  "thumbnail": "thumbnail.webp",
+  "defaultScale": 1
+}
