@@ -33,11 +33,41 @@
 
 .brand,
 .environment,
+.quality-setting,
 .stage-card,
 .camera-guide {
   border: 1px solid rgba(255, 255, 255, 0.19);
   box-shadow: 0 0.75rem 2rem rgba(17, 28, 22, 0.13);
   backdrop-filter: blur(1rem) saturate(120%);
+}
+
+.topbar__settings {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.quality-setting {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.48rem 0.56rem 0.48rem 0.72rem;
+  color: #263b2e;
+  font-size: 0.67rem;
+  font-weight: 750;
+  background: rgba(246, 244, 222, 0.72);
+  border-radius: 2rem;
+
+  select {
+    color: inherit;
+    font: inherit;
+    background: rgba(255, 255, 255, 0.48);
+    border: 0;
+    border-radius: 1rem;
+    outline-offset: 0.15rem;
+    padding: 0.2rem 0.35rem;
+  }
 }
 
 .brand {

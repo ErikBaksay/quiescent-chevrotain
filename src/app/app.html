@@ -2,6 +2,7 @@
   <app-game-viewport
     #world
     class="world"
+    [vegetationQuality]="vegetationQuality()"
     (editorStateChange)="editorState.set($event)"
   ></app-game-viewport>
 
@@ -20,9 +21,23 @@
       </span>
     </div>
 
-    <div class="environment" aria-label="Current environment: sunny">
-      <span class="environment__sun" aria-hidden="true"></span>
-      <span>Sunny</span>
+    <div class="topbar__settings">
+      <label class="quality-setting">
+        <span>Quality</span>
+        <select
+          aria-label="Vegetation quality"
+          [value]="vegetationQuality()"
+          (change)="setVegetationQuality($any($event.target).value, world)"
+        >
+          @for (quality of vegetationQualities; track quality) {
+            <option [value]="quality">{{ quality[0].toUpperCase() + quality.slice(1) }}</option>
+          }
+        </select>
+      </label>
+      <div class="environment" aria-label="Current environment: sunny">
+        <span class="environment__sun" aria-hidden="true"></span>
+        <span>Sunny</span>
+      </div>
     </div>
   </header>
 

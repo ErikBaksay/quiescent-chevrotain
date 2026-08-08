@@ -63,6 +63,11 @@ describe('EditorSystem', () => {
         root.add(new Mesh(new PlaneGeometry(2, 2)));
         return root;
       }),
+      createPlacementPreview: vi.fn(async () => {
+        const root = new Group();
+        root.add(new Mesh(new PlaneGeometry(2, 2)));
+        return root;
+      }),
     } as unknown as AssetManager;
     editor = new EditorSystem(
       scene,

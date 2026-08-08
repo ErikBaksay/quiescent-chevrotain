@@ -1,0 +1,38 @@
+{
+  "id": "southern-live-oak",
+  "name": "Southern Live Oak",
+  "category": "nature",
+  "model": "model.glb",
+  "thumbnail": "thumbnail.webp",
+  "defaultScale": 1,
+  "renderMode": "vegetation",
+  "vegetation": {
+    "bounds": {
+      "radius": 14,
+      "height": 18
+    },
+    "variants": [
+      {
+        "id": "courtyard",
+        "lod0": ["Courtyard_LOD0_Trunk", "Courtyard_LOD0_Foliage"],
+        "lod1": ["Courtyard_LOD1_Trunk", "Courtyard_LOD1_Foliage"],
+        "impostor": "Courtyard_Impostor",
+        "shadow": "Courtyard_ShadowProxy"
+      },
+      {
+        "id": "windswept",
+        "lod0": ["Windswept_LOD0_Trunk", "Windswept_LOD0_Foliage"],
+        "lod1": ["Windswept_LOD1_Trunk", "Windswept_LOD1_Foliage"],
+        "impostor": "Windswept_Impostor",
+        "shadow": "Windswept_ShadowProxy"
+      },
+      {
+        "id": "low-spreading",
+        "lod0": ["LowSpreading_LOD0_Trunk", "LowSpreading_LOD0_Foliage"],
+        "lod1": ["LowSpreading_LOD1_Trunk", "LowSpreading_LOD1_Foliage"],
+        "impostor": "LowSpreading_Impostor",
+        "shadow": "LowSpreading_ShadowProxy"
+      }
+    ]
+  }
+}

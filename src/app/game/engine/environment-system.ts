@@ -19,6 +19,9 @@ export class EnvironmentSystem {
   private readonly skyGeometry = new SphereGeometry(3_000, 32, 16);
   private readonly skyMaterial: ShaderMaterial;
   private readonly sky: Mesh;
+  private readonly sun: DirectionalLight;
+  private readonly sunTarget = new Group();
+  private readonly sunOffset = new Vector3(280, 420, 160);
 
   constructor(private readonly scene: Scene) {
     const horizonColor = new Color(0xcbdcc9);
@@ -34,27 +37,31 @@ export class EnvironmentSystem {
     const hemisphereLight = new HemisphereLight(0xddeeff, 0x53623e, 2.25);
     hemisphereLight.name = 'Ambient sky light';
 
-    const sun = new DirectionalLight(0xffedc4, 3.6);
-    sun.name = 'Sun';
-    sun.position.set(280, 420, 160);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2_048, 2_048);
-    sun.shadow.camera.near = 50;
-    sun.shadow.camera.far = 850;
-    sun.shadow.camera.left = -280;
-    sun.shadow.camera.right = 280;
-    sun.shadow.camera.top = 280;
-    sun.shadow.camera.bottom = -280;
-    sun.shadow.bias = -0.00015;
-    sun.shadow.normalBias = 0.025;
+    this.sun = new DirectionalLight(0xffedc4, 3.6);
+    this.sun.name = 'Sun';
+    this.sun.position.copy(this.sunOffset);
+    this.sun.castShadow = true;
+    this.sun.shadow.mapSize.set(2_048, 2_048);
+    this.sun.shadow.camera.near = 50;
+    this.sun.shadow.camera.far = 850;
+    this.sun.shadow.camera.left = -280;
+    this.sun.shadow.camera.right = 280;
+    this.sun.shadow.camera.top = 280;
+    this.sun.shadow.camera.bottom = -280;
+    this.sun.shadow.bias = -0.00015;
+    this.sun.shadow.normalBias = 0.025;
+    this.sun.target = this.sunTarget;
 
     this.root.name = 'Environment';
-    this.root.add(hemisphereLight, sun, sun.target);
+    this.root.add(hemisphereLight, this.sun, this.sunTarget);
     this.scene.add(this.sky, this.root);
   }
 
   update(camera: PerspectiveCamera): void {
     this.sky.position.copy(camera.position);
+    // Keep the bounded shadow budget centered on the current editing area.
+    this.sunTarget.position.set(camera.position.x, 0, camera.position.z);
+    this.sun.position.copy(this.sunTarget.position).add(this.sunOffset);
   }
 
   dispose(): void {

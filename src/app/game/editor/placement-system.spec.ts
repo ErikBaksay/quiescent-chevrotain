@@ -31,7 +31,12 @@ describe('PlacementSystem', () => {
       root.add(new Mesh(new PlaneGeometry(1, 1)));
       return root;
     });
-    const manager = { createInstance } as unknown as AssetManager;
+    const createPlacementPreview = vi.fn(async () => {
+      const root = new Group();
+      root.add(new Mesh(new PlaneGeometry(1, 1)));
+      return root;
+    });
+    const manager = { createInstance, createPlacementPreview } as unknown as AssetManager;
     const system = new PlacementSystem(scene, terrain, manager, vi.fn());
 
     await system.begin(asset);
@@ -40,8 +45,12 @@ describe('PlacementSystem', () => {
     const placed = await system.createAtCurrentPoint();
 
     expect(system.state).toMatchObject({ activeAssetId: 'courthouse', status: 'ready' });
-    expect(placed?.position.x).toBe(Math.round(placed?.position.x ?? 0));
-    expect(createInstance).toHaveBeenCalledTimes(2);
+    expect(placed?.kind).toBe('object');
+    if (placed?.kind === 'object') {
+      expect(placed.object.position.x).toBe(Math.round(placed.object.position.x));
+    }
+    expect(createPlacementPreview).toHaveBeenCalledTimes(1);
+    expect(createInstance).toHaveBeenCalledTimes(1);
     system.dispose();
     terrain.geometry.dispose();
   });

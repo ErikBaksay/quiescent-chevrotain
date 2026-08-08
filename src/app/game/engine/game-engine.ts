@@ -7,6 +7,7 @@ import { WORLD_CONFIG } from '../world/world.config';
 import { WorldSystem } from '../world/world-system';
 import { CameraSystem } from './camera-system';
 import { EnvironmentSystem } from './environment-system';
+import { VEGETATION_QUALITY_PROFILES, VegetationQuality } from '../vegetation/vegetation-quality';
 
 export type GameEngineState = 'running' | 'context-lost';
 
@@ -28,6 +29,7 @@ export class GameEngine {
   private animationFrameId: number | undefined;
   private width = 1;
   private height = 1;
+  private vegetationQuality: VegetationQuality = 'ultra';
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -76,6 +78,12 @@ export class GameEngine {
     this.editorSystem.setTool(tool);
   }
 
+  setVegetationQuality(quality: VegetationQuality): void {
+    this.vegetationQuality = quality;
+    this.editorSystem.setVegetationQuality(quality);
+    this.updateRendererSize();
+  }
+
   deleteSelected(): void {
     this.editorSystem.deleteSelected();
   }
@@ -100,8 +108,7 @@ export class GameEngine {
 
     this.width = nextWidth;
     this.height = nextHeight;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setSize(this.width, this.height, false);
+    this.updateRendererSize();
     this.cameraSystem.resize(this.width, this.height);
   }
 
@@ -141,5 +148,11 @@ export class GameEngine {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = undefined;
     }
+  }
+
+  private updateRendererSize(): void {
+    const maximum = VEGETATION_QUALITY_PROFILES[this.vegetationQuality].pixelRatio;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maximum));
+    this.renderer.setSize(this.width, this.height, false);
   }
 }

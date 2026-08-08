@@ -3,6 +3,11 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 const PLACEABLE_ROOT_KEY = 'quiescentChevrotainPlaceableRoot';
 
+export interface ObjectPick {
+  readonly object: Object3D;
+  readonly distance: number;
+}
+
 /** Owns the placeable-object root, single selection, picking, and its visual highlight. */
 export class SelectionSystem {
   readonly objectsRoot = new Group();
@@ -52,10 +57,15 @@ export class SelectionSystem {
   }
 
   pick(pointer: Vector2, camera: PerspectiveCamera): Object3D | undefined {
+    return this.pickHit(pointer, camera)?.object;
+  }
+
+  pickHit(pointer: Vector2, camera: PerspectiveCamera): ObjectPick | undefined {
     camera.updateWorldMatrix(true, false);
     this.raycaster.setFromCamera(pointer, camera);
     const intersection = this.raycaster.intersectObjects(this.objectsRoot.children, true)[0];
-    return intersection ? this.resolvePlaceableRoot(intersection.object) : undefined;
+    const object = intersection ? this.resolvePlaceableRoot(intersection.object) : undefined;
+    return object && intersection ? { object, distance: intersection.distance } : undefined;
   }
 
   resolvePlaceableRoot(object: Object3D): Object3D | undefined {

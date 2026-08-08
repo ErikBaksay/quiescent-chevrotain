@@ -2,6 +2,7 @@
   "version": 1,
   "manifests": [
     "models/neoclassical-courthouse/asset.json",
-    "models/greek-revival-residence/asset.json"
+    "models/greek-revival-residence/asset.json",
+    "models/southern-live-oak/asset.json"
   ]
 }

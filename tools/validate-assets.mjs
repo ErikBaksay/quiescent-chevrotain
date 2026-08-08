@@ -125,6 +125,58 @@ async function validateManifest(manifestPath, ids) {
     report(scope, 'defaultScale must be a positive number');
   }
 
+  if (
+    definition.renderMode !== undefined &&
+    !['object', 'vegetation'].includes(definition.renderMode)
+  ) {
+    report(scope, 'renderMode must be object or vegetation');
+  }
+
+  if (definition.renderMode === 'vegetation') {
+    const vegetation = definition.vegetation;
+    if (definition.category !== 'nature') {
+      report(scope, 'vegetation assets must use the nature category');
+    }
+    if (
+      !vegetation ||
+      typeof vegetation !== 'object' ||
+      !(vegetation.bounds?.radius > 0) ||
+      !(vegetation.bounds?.height > 0) ||
+      !Array.isArray(vegetation.variants) ||
+      vegetation.variants.length === 0
+    ) {
+      report(scope, 'vegetation must define positive bounds and at least one variant');
+    } else {
+      const variantIds = new Set();
+      for (const variant of vegetation.variants) {
+        if (
+          !variant ||
+          typeof variant.id !== 'string' ||
+          !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(variant.id)
+        ) {
+          report(scope, 'vegetation variant ids must use lowercase kebab case');
+          continue;
+        }
+        if (variantIds.has(variant.id)) report(scope, `duplicate vegetation variant ${variant.id}`);
+        variantIds.add(variant.id);
+        for (const level of ['lod0', 'lod1']) {
+          if (
+            !Array.isArray(variant[level]) ||
+            variant[level].length === 0 ||
+            variant[level].some((name) => typeof name !== 'string' || name.length === 0)
+          ) {
+            report(scope, `vegetation variant ${variant.id} ${level} must contain mesh names`);
+          }
+        }
+        for (const field of ['impostor', 'shadow']) {
+          if (typeof variant[field] !== 'string' || variant[field].length === 0) {
+            report(scope, `vegetation variant ${variant.id} ${field} must be a mesh name`);
+          }
+        }
+      }
+    }
+  }
+
   const manifestDirectory = path.dirname(manifestPath);
   for (const [field, extension, validator] of [
     ['model', '.glb', validateGlb],

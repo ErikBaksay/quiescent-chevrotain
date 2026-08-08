@@ -11,3 +11,11 @@ The intended portable command shape is:
 ```
 
 The exact Blender 4.5 LTS executable path will be supplied at invocation time rather than stored in project files.
+
+The approved Southern live oak is generated with:
+
+```sh
+/path/to/blender --background --factory-startup --python tools/blender/southern_live_oak.py -- --output-root .artifacts/blender/southern-live-oak
+```
+
+Its script writes three variants, two geometry LODs, eight-view color/normal impostor atlases, shadow proxies, review renders, a GLB, an audit, and a candidate manifest. The runtime folder and catalogue entry are added only after final approval.

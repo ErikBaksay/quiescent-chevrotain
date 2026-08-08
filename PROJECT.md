@@ -48,6 +48,8 @@ The world is finite. The initial configuration targets a 2 km × 2 km map, but d
 
 Important systems should leave room for future spatial partitioning, internal chunks, culling, instancing, LODs, optimized vegetation, shared GLTF resources, bounded shadow distance, and efficient scene queries. These are compatibility concerns, not current implementation requirements.
 
+The first vegetation renderer now establishes that path: logical tree records are spatially indexed in 100 m cells and rendered through consolidated `InstancedMesh` batches with geometry LODs, eight-view impostors, and distance-bounded shadow proxies. Individual editing uses one temporary transform proxy rather than one persistent scene object per tree.
+
 ## Visual direction
 
 The target is warm, believable realism or semi-realism—not a low-poly style and not a rendering technology demonstration. Priorities include attractive lighting, useful shadows, pleasant materials, vegetation, atmospheric depth, a good sky, and subtle fog.
@@ -166,6 +168,8 @@ The initial scene should remain simple. As object counts become meaningful, meas
 
 The finite 2 km map may be internally partitioned later even though it presents as one continuous world. Chunking must not leak into asset authoring or player workflows unnecessarily.
 
+Vegetation exposes explicit Performance, High, and Ultra profiles. Ultra is the visual default and retains full LOD0 geometry at every visible distance. Performance targets 1080p/60 on Intel Iris Xe with a 1× pixel-ratio ceiling, while Performance and High retain simplified LOD1 trees instead of distance-culling them.
+
 ## Incremental roadmap
 
 ### Stage 1 — Foundation (complete)
@@ -193,7 +197,7 @@ Completion means the primitive place/select/transform/delete loop is stable with
 - Continuous placement ghost and the eight-piece Southern American Heritage Town Collection
 - Duplicate, scale, and optional snapping
 
-The collection spans 1820–1910 with maintained historical patina. The approved runtime collection currently includes the Neoclassical Courthouse and Greek Revival Residence; each asset requires separate concept and final approval before work begins on the next.
+The collection spans 1820–1910 with maintained historical patina. The approved runtime collection currently includes the Neoclassical Courthouse, Greek Revival Residence, and the three-form Southern Live Oak vegetation asset; each authored asset requires separate concept and final approval before work begins on the next.
 
 ### Stage 4 — Editor robustness
 

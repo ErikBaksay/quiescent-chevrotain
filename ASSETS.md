@@ -37,6 +37,10 @@ interface AssetDefinition {
 }
 ```
 
+Legacy manifests omit `renderMode` and resolve as ordinary object assets. Instanced vegetation uses `renderMode: "vegetation"`, remains in the `nature` category, and adds positive radius/height bounds plus one or more variants. Each variant names its LOD0 meshes, LOD1 meshes, eight-view impostor mesh, and shadow-proxy mesh inside the GLB. Paths retain the same safe package-relative rules as ordinary assets.
+
+Vegetation export names are stable runtime interfaces. A variant named `Courtyard` uses names such as `Courtyard_LOD0_Trunk`, `Courtyard_LOD0_Foliage`, `Courtyard_LOD1_Trunk`, `Courtyard_LOD1_Foliage`, `Courtyard_Impostor`, and `Courtyard_ShadowProxy`.
+
 IDs and folder names use lowercase kebab case. Paths must be relative, use forward slashes, and remain inside the asset's folder. `defaultScale` must be positive.
 
 ## Scene and naming conventions

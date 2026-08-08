@@ -5,6 +5,7 @@ import {
   AssetCatalog,
   AssetDefinition,
   ResolvedAssetDefinition,
+  isVegetationAsset,
 } from './asset.types';
 
 @Injectable({ providedIn: 'root' })
@@ -52,6 +53,31 @@ export class AssetCatalogService {
       !(asset.defaultScale > 0)
     ) {
       throw new Error('An asset manifest is malformed.');
+    }
+
+    if (isVegetationAsset(asset)) {
+      const { bounds, variants } = asset.vegetation ?? {};
+      if (
+        asset.category !== 'nature' ||
+        !bounds ||
+        !(bounds.radius > 0) ||
+        !(bounds.height > 0) ||
+        !Array.isArray(variants) ||
+        variants.length === 0 ||
+        variants.some(
+          (variant) =>
+            !variant ||
+            typeof variant.id !== 'string' ||
+            !Array.isArray(variant.lod0) ||
+            variant.lod0.length === 0 ||
+            !Array.isArray(variant.lod1) ||
+            variant.lod1.length === 0 ||
+            typeof variant.impostor !== 'string' ||
+            typeof variant.shadow !== 'string',
+        )
+      ) {
+        throw new Error('A vegetation asset manifest is malformed.');
+      }
     }
   }
 }

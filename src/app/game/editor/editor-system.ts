@@ -5,6 +5,8 @@ import { EditorState, EditorTool, INITIAL_EDITOR_STATE } from './editor.types';
 import { PlacementSystem } from './placement-system';
 import { SelectionSystem } from './selection-system';
 import { TransformSystem } from './transform-system';
+import { VegetationSystem } from '../vegetation/vegetation-system';
+import { VegetationQuality } from '../vegetation/vegetation-quality';
 
 interface PointerStart {
   readonly id: number;
@@ -17,6 +19,7 @@ export class EditorSystem {
   private readonly placementSystem: PlacementSystem;
   private readonly selectionSystem: SelectionSystem;
   private readonly transformSystem: TransformSystem;
+  private readonly vegetationSystem: VegetationSystem;
   private readonly pointer = new Vector2();
   private activeTool: EditorTool = INITIAL_EDITOR_STATE.tool;
   private pointerStart: PointerStart | undefined;
@@ -34,12 +37,16 @@ export class EditorSystem {
   ) {
     this.placementSystem = new PlacementSystem(scene, terrain, assets, () => this.emitState());
     this.selectionSystem = new SelectionSystem(scene);
+    this.vegetationSystem = new VegetationSystem(scene, assets);
     this.transformSystem = new TransformSystem(
       scene,
       camera,
       canvas,
       (dragging) => this.setCameraNavigationEnabled(!dragging),
-      () => this.selectionSystem.update(),
+      () => {
+        this.selectionSystem.update();
+        this.vegetationSystem.syncSelectedProxy();
+      },
     );
     canvas.addEventListener('pointerdown', this.handlePointerDown, true);
     canvas.addEventListener('pointermove', this.handlePointerMove, true);
@@ -54,8 +61,8 @@ export class EditorSystem {
     const placement = this.placementSystem.state;
     return {
       tool: this.activeTool,
-      hasSelection: this.selectionSystem.selectedObject !== undefined,
-      objectCount: this.selectionSystem.objectCount,
+      hasSelection: this.selectedObject !== undefined,
+      objectCount: this.selectionSystem.objectCount + this.vegetationSystem.count,
       activeAssetId: placement.activeAssetId,
       placementStatus: placement.status,
       placementError: placement.error,
@@ -68,27 +75,28 @@ export class EditorSystem {
     this.activeTool = 'place';
     this.transformSystem.detach();
     this.selectionSystem.select(undefined);
+    this.vegetationSystem.select(undefined);
     this.canvas.style.cursor = 'crosshair';
     void this.placementSystem.begin(asset);
     this.emitState();
   }
 
   setTool(tool: EditorTool): void {
-    if (
-      (tool === 'move' || tool === 'rotate' || tool === 'scale') &&
-      !this.selectionSystem.selectedObject
-    )
-      return;
+    if ((tool === 'move' || tool === 'rotate' || tool === 'scale') && !this.selectedObject) return;
     if (tool === 'place' && !this.state.activeAssetId) return;
     if (this.activeTool === 'place' && tool !== 'place') this.placementSystem.cancel();
     this.activeTool = tool;
-    this.transformSystem.setTool(tool, this.selectionSystem.selectedObject);
+    this.transformSystem.setTool(tool, this.selectedObject);
     this.canvas.style.cursor = tool === 'place' ? 'crosshair' : '';
     this.emitState();
   }
 
   duplicateSelected(): void {
     if (this.transformSystem.isDragging) return;
+    if (this.vegetationSystem.selectedRecordId) {
+      void this.duplicateSelectedVegetation();
+      return;
+    }
     const duplicate = this.selectionSystem.duplicateSelected();
     if (!duplicate) return;
     this.activeTool = 'select';
@@ -97,9 +105,10 @@ export class EditorSystem {
   }
 
   deleteSelected(): void {
-    if (this.transformSystem.isDragging || !this.selectionSystem.selectedObject) return;
+    if (this.transformSystem.isDragging || !this.selectedObject) return;
     this.transformSystem.detach();
-    this.selectionSystem.removeSelected();
+    if (this.vegetationSystem.selectedRecordId) this.vegetationSystem.removeSelected();
+    else this.selectionSystem.removeSelected();
     this.activeTool = 'select';
     this.emitState();
   }
@@ -119,6 +128,11 @@ export class EditorSystem {
 
   update(): void {
     this.selectionSystem.update();
+    this.vegetationSystem.update(this.camera, performance.now());
+  }
+
+  setVegetationQuality(quality: VegetationQuality): void {
+    this.vegetationSystem.setQuality(quality);
   }
 
   dispose(): void {
@@ -129,6 +143,7 @@ export class EditorSystem {
     this.canvas.removeEventListener('pointerleave', this.handlePointerCancel, true);
     window.removeEventListener('keydown', this.handleKeyDown);
     this.transformSystem.dispose();
+    this.vegetationSystem.dispose();
     this.selectionSystem.dispose();
     this.placementSystem.dispose();
   }
@@ -158,7 +173,7 @@ export class EditorSystem {
     if (this.activeTool === 'place') {
       void this.placeAtPointer();
     } else {
-      this.selectObject(this.selectionSystem.pick(this.pointer, this.camera));
+      this.selectAtPointer();
     }
   };
 
@@ -180,7 +195,7 @@ export class EditorSystem {
     else if (event.ctrlKey || event.metaKey) return;
     else if (key === 'escape') {
       if (this.activeTool !== 'select') this.setTool('select');
-      else this.selectObject(undefined);
+      else this.clearSelection();
     } else if (key === 'g') this.setTool('move');
     else if (key === 'r') this.setTool('rotate');
     else if (key === 's') this.setTool('scale');
@@ -193,16 +208,55 @@ export class EditorSystem {
     if (!this.placementSystem.updatePointer(this.pointer, this.camera)) return;
     const object = await this.placementSystem.createAtCurrentPoint();
     if (!object || this.activeTool !== 'place') return;
-    this.selectionSystem.register(object);
+    if (object.kind === 'vegetation') await this.vegetationSystem.add(object);
+    else this.selectionSystem.register(object.object);
     this.emitState();
   }
 
   private selectObject(object: Object3D | undefined): void {
+    this.vegetationSystem.select(undefined);
     this.selectionSystem.select(object);
     if (!object && ['move', 'rotate', 'scale'].includes(this.activeTool))
       this.activeTool = 'select';
     this.transformSystem.setTool(this.activeTool, object);
     this.emitState();
+  }
+
+  private selectVegetation(id: string | undefined): void {
+    this.selectionSystem.select(undefined);
+    this.vegetationSystem.select(id);
+    if (!id && ['move', 'rotate', 'scale'].includes(this.activeTool)) this.activeTool = 'select';
+    this.transformSystem.setTool(this.activeTool, this.vegetationSystem.selectedObject);
+    this.emitState();
+  }
+
+  private selectAtPointer(): void {
+    const object = this.selectionSystem.pickHit(this.pointer, this.camera);
+    const vegetation = this.vegetationSystem.pick(this.pointer, this.camera);
+    if (vegetation && (!object || vegetation.distance < object.distance)) {
+      this.selectVegetation(vegetation.id);
+    } else {
+      this.selectObject(object?.object);
+    }
+  }
+
+  private clearSelection(): void {
+    this.selectionSystem.select(undefined);
+    this.vegetationSystem.select(undefined);
+    if (['move', 'rotate', 'scale'].includes(this.activeTool)) this.activeTool = 'select';
+    this.transformSystem.setTool(this.activeTool, undefined);
+    this.emitState();
+  }
+
+  private async duplicateSelectedVegetation(): Promise<void> {
+    if (!(await this.vegetationSystem.duplicateSelected())) return;
+    this.activeTool = 'select';
+    this.transformSystem.detach();
+    this.emitState();
+  }
+
+  private get selectedObject(): Object3D | undefined {
+    return this.selectionSystem.selectedObject ?? this.vegetationSystem.selectedObject;
   }
 
   private updatePointer(event: PointerEvent): boolean {

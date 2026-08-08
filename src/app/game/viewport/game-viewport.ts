@@ -9,12 +9,14 @@ import {
   ViewChild,
   computed,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
 import { GameEngine } from '../engine/game-engine';
 import { EditorState, EditorTool } from '../editor/editor.types';
 import { ResolvedAssetDefinition } from '../../assets/asset.types';
+import { VegetationQuality } from '../vegetation/vegetation-quality';
 
 type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost' | 'error';
 
@@ -25,6 +27,7 @@ type ViewportState = 'initializing' | 'running' | 'unsupported' | 'context-lost'
 })
 export class GameViewport implements AfterViewInit, OnDestroy {
   readonly editorStateChange = output<EditorState>();
+  readonly vegetationQuality = input<VegetationQuality>('ultra');
 
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('viewport', { static: true }) private viewportRef!: ElementRef<HTMLElement>;
@@ -63,6 +66,7 @@ export class GameViewport implements AfterViewInit, OnDestroy {
           onStateChange: (state) => this.state.set(state),
           onEditorStateChange: (state) => this.editorStateChange.emit(state),
         });
+        this.engine.setVegetationQuality(this.vegetationQuality());
         this.resizeObserver = new ResizeObserver((entries) => {
           const entry = entries[0];
           if (entry) {
@@ -92,6 +96,9 @@ export class GameViewport implements AfterViewInit, OnDestroy {
 
   beginAssetPlacement(asset: ResolvedAssetDefinition): void {
     this.engine?.beginAssetPlacement(asset);
+  }
+  setVegetationQuality(quality: VegetationQuality): void {
+    this.engine?.setVegetationQuality(quality);
   }
   duplicateSelected(): void {
     this.engine?.duplicateSelected();
