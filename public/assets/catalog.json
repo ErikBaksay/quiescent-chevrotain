@@ -4,6 +4,7 @@
     "models/civic-hall/asset.json",
     "models/porch-residence/asset.json",
     "models/mature-broadleaf-tree/asset.json",
+    "models/woodland-pine/asset.json",
     "models/narrow-front-residence/asset.json"
   ]
 }

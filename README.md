@@ -2,7 +2,7 @@
 
 Quiescent Chevrotain is a relaxing, browser-first 3D world builder focused on free-form building, decorating, landscaping, and enjoying the result.
 
-The project is implementing **Stage 3: Asset Catalogue and Real Asset System**. It now has a data-driven GLB catalogue, continuous placement ghosts, cached instances, full transforms, duplication, optional snapping, and selectable building appearances. The approved runtime collection currently includes Civic Hall, Porch Residence, Mature Broadleaf Tree, and Narrow-front Residence Set.
+The project is implementing **Stage 3: Asset Catalogue and Real Asset System**. It now has a data-driven GLB catalogue, continuous placement ghosts, cached instances, full transforms, duplication, optional snapping, and selectable building appearances. The approved runtime collection currently includes Civic Hall, Porch Residence, Mature Broadleaf Tree, Woodland Pine, and Narrow-front Residence Set.
 
 ## Stack
 
@@ -58,6 +58,7 @@ npm run build    # Create a production build in dist/
 npm run build:pages # Build with the GitHub Pages repository base path
 npm test         # Run unit tests
 npm run assets:validate # Validate the catalogue, manifests, GLB headers, and thumbnails
+npm run assets:audit:vegetation # Audit vegetation density, materials, atlases, and bounds
 npm run format   # Format source and documentation
 npm run format:check
 ```

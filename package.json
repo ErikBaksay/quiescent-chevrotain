@@ -10,6 +10,11 @@
     "test": "ng test --watch=false",
     "test:watch": "ng test",
     "assets:validate": "node tools/validate-assets.mjs",
+    "assets:audit:vegetation": "python3 tools/audit-vegetation-assets.py",
+    "assets:generate:mature-broadleaf": "node tools/generate-mature-broadleaf-fallback.mjs",
+    "assets:generate:mature-broadleaf:runtime": "node tools/generate-mature-broadleaf-fallback.mjs --runtime-root public/assets/models/mature-broadleaf-tree",
+    "assets:generate:woodland-pine": "node tools/generate-woodland-pine.mjs",
+    "assets:generate:woodland-pine:runtime": "node tools/generate-woodland-pine.mjs --runtime-root public/assets/models/woodland-pine",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

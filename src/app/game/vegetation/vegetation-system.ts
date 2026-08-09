@@ -420,10 +420,11 @@ export class VegetationSystem {
     if (!shadowOnly && 'alphaTest' in material && name.toLowerCase().includes('foliage')) {
       Object.assign(material, {
         alphaHash: true,
-        alphaTest: 0.45,
+        alphaTest: 0.2,
         transparent: false,
         depthWrite: true,
       });
+      material.side = DoubleSide;
     }
     const batchMesh = new InstancedMesh(mesh.geometry, material, MAX_INSTANCES);
     batchMesh.name = `Batch ${name}`;
@@ -494,9 +495,9 @@ export class VegetationSystem {
 
         void main() {
           vec4 sampled = texture2D(map, vAtlasUv);
-          if (sampled.a < 0.45) discard;
+          if (sampled.a < 0.2) discard;
           vec3 normal = texture2D(normalMap, vAtlasUv).xyz * 2.0 - 1.0;
-          float diffuse = 0.82 + max(normal.z, 0.0) * 0.18;
+          float diffuse = 0.9 + max(normal.z, 0.0) * 0.16;
           vec3 color = sampled.rgb * vInstanceColor * diffuse;
           float fogFactor = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
           gl_FragColor = vec4(mix(color, fogColor, clamp(fogFactor, 0.0, 1.0)), sampled.a);

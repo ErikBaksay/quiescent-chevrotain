@@ -200,7 +200,7 @@ Completion means the primitive place/select/transform/delete loop is stable with
 - Continuous placement ghost and the first reusable asset catalogue
 - Duplicate, scale, and optional snapping
 
-The approved runtime collection currently includes Civic Hall, Porch Residence, the three-form Mature Broadleaf Tree vegetation asset, and the three-shape/four-palette Narrow-front Residence Set. Building appearances can expose named shape and palette variants through one shared GLB package; each authored asset requires separate concept and final approval before runtime integration.
+The approved runtime collection currently includes Civic Hall, Porch Residence, the three-form Mature Broadleaf Tree vegetation asset, the three-form Woodland Pine vegetation asset, and the three-shape/four-palette Narrow-front Residence Set. Both vegetation packages use dense overlapping foliage clusters, geometry LODs, eight-view color/normal impostors, and shared instanced batches. Building appearances can expose named shape and palette variants through one shared GLB package; each authored asset requires separate concept and final approval before runtime integration.
 
 ### Stage 4 — Editor robustness
 

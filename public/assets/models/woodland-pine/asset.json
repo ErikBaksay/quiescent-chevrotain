@@ -1,0 +1,38 @@
+{
+  "id": "woodland-pine",
+  "name": "Woodland Pine",
+  "category": "nature",
+  "model": "model.glb",
+  "thumbnail": "thumbnail.webp",
+  "defaultScale": 1,
+  "renderMode": "vegetation",
+  "vegetation": {
+    "bounds": {
+      "radius": 9,
+      "height": 22
+    },
+    "variants": [
+      {
+        "id": "upright",
+        "lod0": ["Upright_LOD0_Trunk", "Upright_LOD0_Foliage"],
+        "lod1": ["Upright_LOD1_Trunk", "Upright_LOD1_Foliage"],
+        "impostor": "Upright_Impostor",
+        "shadow": "Upright_ShadowProxy"
+      },
+      {
+        "id": "open-crown",
+        "lod0": ["OpenCrown_LOD0_Trunk", "OpenCrown_LOD0_Foliage"],
+        "lod1": ["OpenCrown_LOD1_Trunk", "OpenCrown_LOD1_Foliage"],
+        "impostor": "OpenCrown_Impostor",
+        "shadow": "OpenCrown_ShadowProxy"
+      },
+      {
+        "id": "asymmetric",
+        "lod0": ["Asymmetric_LOD0_Trunk", "Asymmetric_LOD0_Foliage"],
+        "lod1": ["Asymmetric_LOD1_Trunk", "Asymmetric_LOD1_Foliage"],
+        "impostor": "Asymmetric_Impostor",
+        "shadow": "Asymmetric_ShadowProxy"
+      }
+    ]
+  }
+}

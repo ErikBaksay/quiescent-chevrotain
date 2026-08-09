@@ -33,9 +33,28 @@ Constraints: complete uncropped trees, realistic branch taper, porous crowns, no
 - `source/foliage-alpha-v1.png` is the locally extracted RGBA version intended for atlas preparation.
 - `source/bark-source-v1.png` is the generated flat-lit bark source intended for later de-lighting, repeat cleanup, and PBR-map authoring.
 
+The current lush runtime revision uses the processed `source/foliage-atlas-v2.png`,
+`source/bark-warm-v2.png`, and eight-view `source/broadleaf-impostor-atlas-v2.png`
+sources. The atlas is packed into overlapping cluster tiles so the runtime cards
+form a continuous crown rather than isolated leaf fragments. Its color and normal
+impostors share the same alpha framing.
+
 The foliage sheet was generated as twelve isolated elements: four leaves, four twig tips, and four larger branchlet clusters. The key-removal helper sampled `#fa03f9`; 1,250,856 of 1,572,864 pixels became fully transparent and 21,668 retained partial edge alpha.
 
-Neither source image is runtime-ready. Modeling must not begin until the silhouette concept is approved. After approval, the foliage source will be tightened into an atlas, the bark source will be made repeat-safe and de-lit, and all normal/roughness data will be authored or baked rather than inferred from the concept lighting.
+The v1 source images remain the concept-generation record; the v2 processed
+sources are the runtime-ready inputs. The canonical Blender generator is
+`tools/blender/mature_broadleaf_tree.py`. The checked-in GLB preserves the
+existing three variant IDs and mesh-name contract, with dense LOD0/LOD1 foliage,
+double-sided alpha masking, and lower-alpha impostor presentation for the shared
+instanced vegetation renderer.
+
+## Runtime fidelity review
+
+The current review target is a healthy, full canopy: foliage defines the outer
+silhouette, while the warm gray-brown branches remain supporting structure. The
+asset audit checks mesh contracts, foliage triangle minimums, embedded image
+decoding, alpha coverage, matching impostor color/normal transparency, and
+ground-centred bounds.
 
 ## Approval criteria
 

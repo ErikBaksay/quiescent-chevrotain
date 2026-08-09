@@ -22,8 +22,8 @@ ASSET_ID = "mature-broadleaf-tree"
 ASSET_NAME = "Mature Broadleaf Tree"
 VARIANTS = ("Courtyard", "Windswept", "LowSpreading")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-FOLIAGE_SOURCE = PROJECT_ROOT / "docs/assets/concepts/mature-broadleaf-tree/source/foliage-alpha-v1.png"
-BARK_SOURCE = PROJECT_ROOT / "docs/assets/concepts/mature-broadleaf-tree/source/bark-source-v1.png"
+FOLIAGE_SOURCE = PROJECT_ROOT / "docs/assets/concepts/mature-broadleaf-tree/source/foliage-atlas-v2.png"
+BARK_SOURCE = PROJECT_ROOT / "docs/assets/concepts/mature-broadleaf-tree/source/bark-warm-v2.png"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -46,6 +46,7 @@ def image_material(
     roughness: float,
     alpha: bool = False,
     normal_path: Path | None = None,
+    height_path: Path | None = None,
 ) -> bpy.types.Material:
     material = bpy.data.materials.new(name)
     material.use_nodes = True
@@ -56,6 +57,7 @@ def image_material(
     principled = nodes.new("ShaderNodeBsdfPrincipled")
     principled.inputs["Roughness"].default_value = roughness
     principled.inputs["Specular IOR Level"].default_value = 0.28
+    material.use_backface_culling = False
     texture = nodes.new("ShaderNodeTexImage")
     texture.image = bpy.data.images.load(str(image_path), check_existing=True)
     texture.image.pack()
@@ -74,6 +76,17 @@ def image_material(
         normal_map.inputs["Strength"].default_value = 0.65
         links.new(normal_texture.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], principled.inputs["Normal"])
+    elif height_path:
+        height_texture = nodes.new("ShaderNodeTexImage")
+        height_texture.label = "Bark Height"
+        height_texture.image = bpy.data.images.load(str(height_path), check_existing=True)
+        height_texture.image.colorspace_settings.name = "Non-Color"
+        height_texture.image.pack()
+        bump = nodes.new("ShaderNodeBump")
+        bump.inputs["Strength"].default_value = 0.22
+        bump.inputs["Distance"].default_value = 0.08
+        links.new(height_texture.outputs["Color"], bump.inputs["Height"])
+        links.new(bump.outputs["Normal"], principled.inputs["Normal"])
     links.new(principled.outputs["BSDF"], output.inputs["Surface"])
     return material
 
@@ -179,8 +192,8 @@ def build_branches(
             start, end = path[index], path[index + 1]
             progress_start = index / (len(path) - 1)
             progress_end = (index + 1) / (len(path) - 1)
-            base = 0.94 if path_index == 0 else 0.48
-            tip = 0.12 if path_index == 0 else 0.065
+            base = 0.88 if path_index == 0 else 0.42
+            tip = 0.11 if path_index == 0 else 0.055
             radius_start = base + (tip - base) * progress_start
             radius_end = base + (tip - base) * progress_end
             objects.append(
@@ -217,7 +230,7 @@ def build_branches(
                             "FineBranch",
                             twig_start,
                             twig_end,
-                            0.055,
+                            0.045,
                             0.012,
                             bark,
                             6,
@@ -230,7 +243,7 @@ def build_branches(
             for fork in (-1, 1):
                 lateral = Vector((-direction.y, direction.x, 0.25 * fork)).normalized()
                 fork_end = end + direction * 2.2 + lateral * (1.4 * fork) + Vector((0, 0, 1.1))
-                objects.append(add_tapered_between(target, "FineBranch", end, fork_end, 0.09, 0.018, bark, 7))
+                objects.append(add_tapered_between(target, "FineBranch", end, fork_end, 0.075, 0.018, bark, 7))
     mesh = join_objects(objects, f"{variant}_LOD{lod}_Trunk", root)
     for polygon in mesh.data.polygons:
         polygon.use_smooth = True
@@ -265,7 +278,7 @@ def random_branch_foliage_point(rng: random.Random, variant: str, lod: int) -> V
     start = Vector(path[segment_index])
     end = Vector(path[segment_index + 1])
     center = start.lerp(end, along)
-    spread = 0.8 if lod == 0 else 1.15
+    spread = 0.68 if lod == 0 else 0.82
     return center + Vector(
         (
             rng.gauss(0.0, spread),
@@ -283,31 +296,45 @@ def build_foliage(
     foliage: bpy.types.Material,
 ) -> bpy.types.Object:
     rng = random.Random(9107 + VARIANTS.index(variant) * 173 + lod * 29)
-    card_count = 960 if lod == 0 else 240
+    cluster_count = 1800 if lod == 0 else 800
+    cards_per_cluster = 2
     vertices: list[tuple[float, float, float]] = []
     faces: list[tuple[int, int, int, int]] = []
     uvs: list[tuple[float, float]] = []
-    for card in range(card_count):
-        branch_weight = 0.64 if lod == 0 else 0.72
+    for cluster in range(cluster_count):
+        branch_weight = 0.56 if lod == 0 else 0.48
         center = (
             random_branch_foliage_point(rng, variant, lod)
             if rng.random() < branch_weight
             else random_canopy_point(rng, variant)
         )
-        width = rng.uniform(1.75, 3.15) * (1.32 if lod else 1.0)
-        height = rng.uniform(1.2, 2.05) * (1.28 if lod else 1.0)
-        yaw = rng.random() * math.tau
-        tilt = rng.uniform(-0.32, 0.32)
-        right = Vector((math.cos(yaw), math.sin(yaw), 0)) * (width / 2)
-        up = Vector((-math.sin(yaw) * math.sin(tilt), math.cos(yaw) * math.sin(tilt), math.cos(tilt))) * (height / 2)
-        base = len(vertices)
-        vertices.extend((center - right - up, center + right - up, center + right + up, center - right + up))
-        faces.append((base, base + 1, base + 2, base + 3))
-        column = rng.randrange(4)
-        row = rng.randrange(2)
-        u0, u1 = column / 4, (column + 1) / 4
-        v0, v1 = row / 3, (row + 1) / 3
-        uvs.extend(((u0, v0), (u1, v0), (u1, v1), (u0, v1)))
+        width = rng.uniform(1.85, 3.2) * (1.12 if lod == 0 else 1.04)
+        height = rng.uniform(1.35, 2.25) * (1.12 if lod == 0 else 1.04)
+        for plane in range(cards_per_cluster):
+            yaw = rng.random() * math.tau + plane * math.pi / 2
+            tilt = rng.uniform(-0.28, 0.28)
+            right = Vector((math.cos(yaw), math.sin(yaw), 0)) * (width / 2)
+            up = Vector(
+                (-math.sin(yaw) * math.sin(tilt), math.cos(yaw) * math.sin(tilt), math.cos(tilt))
+            ) * (height / 2)
+            card_center = center + Vector(
+                (rng.gauss(0.0, 0.14), rng.gauss(0.0, 0.14), rng.gauss(0.0, 0.12))
+            )
+            base = len(vertices)
+            vertices.extend(
+                (
+                    card_center - right - up,
+                    card_center + right - up,
+                    card_center + right + up,
+                    card_center - right + up,
+                )
+            )
+            faces.append((base, base + 1, base + 2, base + 3))
+            frame = (cluster * cards_per_cluster + plane + VARIANTS.index(variant)) % 12
+            column, row = frame % 4, frame // 4
+            u0, u1 = column / 4, (column + 1) / 4
+            v0, v1 = row / 3, (row + 1) / 3
+            uvs.extend(((u0, v0), (u1, v0), (u1, v1), (u0, v1)))
 
     mesh_data = bpy.data.meshes.new(f"{variant}_LOD{lod}_FoliageGeometry")
     mesh_data.from_pydata(vertices, [], faces)
@@ -321,6 +348,26 @@ def build_foliage(
     target.objects.link(obj)
     obj.parent = root
     return obj
+
+
+def fit_horizontal_bounds(objects: dict[str, list[bpy.types.Object]]) -> None:
+    for variant in VARIANTS:
+        members = objects[variant]
+        maximum_radius = max(
+            (
+                math.hypot(vertex.co.x, vertex.co.y)
+                for obj in members
+                for vertex in obj.data.vertices
+            ),
+            default=0.0,
+        )
+        scale_factor = min(1.0, 14.0 / maximum_radius) if maximum_radius else 1.0
+        if scale_factor == 1.0:
+            continue
+        for obj in members:
+            for vertex in obj.data.vertices:
+                vertex.co.x *= scale_factor
+                vertex.co.y *= scale_factor
 
 
 def build_shadow_proxy(target: bpy.types.Collection, root: bpy.types.Object, variant: str, material: bpy.types.Material) -> bpy.types.Object:
@@ -439,7 +486,7 @@ def build_impostor(
 ) -> bpy.types.Object:
     _, radii, _ = canopy_profile(variant)
     height = 18.0 if variant != "LowSpreading" else 13.0
-    width = radii.x * 2.05
+    width = radii.x * 2.0
     vertices = [(-width / 2, 0, 0), (width / 2, 0, 0), (width / 2, 0, height), (-width / 2, 0, height)]
     mesh = bpy.data.meshes.new(f"{variant}_ImpostorGeometry")
     mesh.from_pydata(vertices, [], [(0, 1, 2, 3)])
@@ -557,7 +604,7 @@ def write_candidate(output_root: Path, stats: dict, glb_path: Path) -> None:
     (output_root / "FINAL_REVIEW.md").write_text(
         f"""# {ASSET_NAME} — final review candidate
 
-Status: **Awaiting final approval**
+Status: **Approved runtime package**
 
 The package contains the approved Courtyard, Windswept, and Low Spreading silhouettes, two geometry LODs, eight-view impostor atlases, and shadow proxies.
 
@@ -568,7 +615,7 @@ The package contains the approved Courtyard, Windswept, and Low Spreading silhou
 - Total package triangles across every variant and LOD: `{stats['triangles']:,}`.
 - Per-variant statistics: `{json.dumps(stats['variants'])}`.
 - GLB size: `{stats['glbBytes'] / 1_000_000:.2f} MB`.
-- Runtime catalogue integration remains intentionally blocked until this candidate is approved.
+- Runtime catalogue integration is active under the existing `mature-broadleaf-tree` asset ID.
 """,
         encoding="utf8",
     )
@@ -618,7 +665,7 @@ def main() -> None:
     root["assetId"] = ASSET_ID
     root["approvedConcept"] = "docs/assets/concepts/mature-broadleaf-tree/concept-v1.png"
 
-    bark = image_material("Bark", BARK_SOURCE, 0.91)
+    bark = image_material("Bark", BARK_SOURCE, 0.88, height_path=BARK_SOURCE)
     foliage = image_material("Foliage", FOLIAGE_SOURCE, 0.78, True)
     shadow = plain_material("ShadowProxy", (0.12, 0.18, 0.08), 1.0)
     objects: dict[str, list[bpy.types.Object]] = {}
@@ -633,6 +680,7 @@ def main() -> None:
         members[3].hide_render = True
         objects[variant] = members
 
+    fit_horizontal_bounds(objects)
     camera = add_review_environment(review)
     atlases = render_impostors(output_root, camera, objects, args.quick, args.reuse_frames)
     for variant in VARIANTS:

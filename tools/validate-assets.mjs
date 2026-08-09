@@ -79,6 +79,97 @@ async function validateGlb(filePath, scope) {
   }
 }
 
+async function readGlbJson(filePath, scope) {
+  try {
+    const data = await readFile(filePath);
+    if (data.length < 20 || data.toString('ascii', 0, 4) !== 'glTF') return undefined;
+    const jsonLength = data.readUInt32LE(12);
+    if (data.toString('ascii', 16, 20) !== 'JSON' || 20 + jsonLength > data.length) {
+      report(scope, 'has an invalid JSON chunk');
+      return undefined;
+    }
+    return JSON.parse(data.toString('utf8', 20, 20 + jsonLength));
+  } catch (error) {
+    report(scope, error instanceof Error ? error.message : String(error));
+    return undefined;
+  }
+}
+
+async function validateVegetationGlb(filePath, definition, scope) {
+  const document = await readGlbJson(filePath, scope);
+  if (!document) return;
+  const nodeNames = new Set((document.nodes ?? []).map((node) => node?.name));
+  const meshByName = new Map(
+    (document.meshes ?? []).filter((mesh) => mesh?.name).map((mesh) => [mesh.name, mesh]),
+  );
+  const nodeByName = new Map(
+    (document.nodes ?? []).filter((node) => node?.name).map((node) => [node.name, node]),
+  );
+  const materialByIndex = document.materials ?? [];
+  const accessorByIndex = document.accessors ?? [];
+  const meshForName = (name) => {
+    const mesh = meshByName.get(name);
+    if (mesh) return mesh;
+    const node = nodeByName.get(name);
+    return Number.isInteger(node?.mesh) ? document.meshes[node.mesh] : undefined;
+  };
+  const declaredNames = (variant) => {
+    if (!variant || typeof variant !== 'object') return [];
+    return [...(variant.lod0 ?? []), ...(variant.lod1 ?? []), variant.impostor, variant.shadow];
+  };
+  for (const variant of definition.vegetation?.variants ?? []) {
+    for (const name of declaredNames(variant)) {
+      if (!nodeNames.has(name) && !meshByName.has(name)) {
+        report(scope, `is missing vegetation mesh ${name}`);
+      }
+    }
+    for (const level of ['lod0', 'lod1']) {
+      const triangles = (variant?.[level] ?? [])
+        .filter((name) => typeof name === 'string' && name.includes('Foliage'))
+        .reduce((total, name) => {
+          const mesh = meshForName(name);
+          return (
+            total +
+            (mesh?.primitives ?? []).reduce((meshTotal, primitive) => {
+              const accessor = accessorByIndex[primitive.indices];
+              return meshTotal + (accessor?.count ?? 0) / 3;
+            }, 0)
+          );
+        }, 0);
+      const minimum = level === 'lod0' ? 7000 : 2500;
+      if (definition.renderMode === 'vegetation' && triangles < minimum) {
+        report(
+          scope,
+          `${level} foliage is too sparse (${triangles} triangles; expected at least ${minimum})`,
+        );
+      }
+    }
+  }
+  const expectedImageCount = definition.id === 'mature-broadleaf-tree' ? 8 : 7;
+  if (!Array.isArray(document.images) || document.images.length < expectedImageCount) {
+    report(scope, 'must embed foliage and impostor images');
+  }
+  const alphaMaterials = materialByIndex.filter(
+    (material) => material?.name === 'Foliage' || material?.name?.includes('ImpostorMaterial'),
+  );
+  for (const material of alphaMaterials) {
+    if (
+      !material?.pbrMetallicRoughness?.baseColorTexture ||
+      material.alphaMode !== 'MASK' ||
+      material.doubleSided !== true ||
+      !(material.alphaCutoff <= 0.25)
+    ) {
+      report(scope, `${material?.name ?? 'Foliage'} must be double-sided alpha-masked foliage`);
+    }
+    if (material?.name?.includes('ImpostorMaterial') && !material.normalTexture) {
+      report(scope, `${material.name} must include a normal texture`);
+    }
+  }
+  if (!materialByIndex.some((material) => material?.name === 'Foliage')) {
+    report(scope, 'must include a Foliage material');
+  }
+}
+
 async function validateWebp(filePath, scope) {
   if (!(await requireFile(filePath, scope))) {
     return;
@@ -262,6 +353,9 @@ async function validateManifest(manifestPath, ids) {
       continue;
     }
     await validator(resolved, `${scope} ${field}`);
+    if (field === 'model' && definition.renderMode === 'vegetation') {
+      await validateVegetationGlb(resolved, definition, `${scope} ${field}`);
+    }
   }
 }
 
